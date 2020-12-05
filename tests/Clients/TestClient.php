@@ -1,6 +1,6 @@
 <?php
 
-namespace ErickJMenezes\Http\Clients;
+namespace Tests\Clients;
 
 use ErickJMenezes\Http\Attributes\Api;
 use ErickJMenezes\Http\Attributes\Body;
@@ -13,7 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 
 
 #[Api('https://jsonplaceholder.typicode.com/')]
-interface TypicodeClient
+interface TestClient
 {
     #[Get('todos')]
     public function getTodos(#[QueryParams] array $query = []): array;

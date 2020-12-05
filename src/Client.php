@@ -8,6 +8,7 @@ use ErickJMenezes\Http\Attributes\Api;
 use ErickJMenezes\Http\Attributes\Body;
 use ErickJMenezes\Http\Attributes\Delete;
 use ErickJMenezes\Http\Attributes\Get;
+use ErickJMenezes\Http\Attributes\Head;
 use ErickJMenezes\Http\Attributes\HeaderParam;
 use ErickJMenezes\Http\Attributes\Patch;
 use ErickJMenezes\Http\Attributes\PathParam;
@@ -34,6 +35,7 @@ class Client
         Post::class => 'post',
         Put::class => 'put',
         Patch::class => 'patch',
+        Head::class => 'head',
         Delete::class => 'delete'
     ];
 
@@ -65,8 +67,8 @@ class Client
                 $this->throwInvalidArgumentException("Api attribute missing");
             }
             $this->api = $apiAttributes[0];
-        } catch (\ReflectionException) {
-            $this->throwInvalidArgumentException();
+        } catch (\ReflectionException $e) {
+            $this->throwInvalidArgumentException($e->getMessage());
         }
         $this->init();
     }

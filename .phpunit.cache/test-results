@@ -1,0 +1,1 @@
+C:37:"PHPUnit\Runner\DefaultTestResultCache":172:{a:2:{s:7:"defects";a:2:{s:32:"ClientTest::testCreatingInstance";i:1;s:5:"Error";i:4;}s:5:"times";a:2:{s:32:"ClientTest::testCreatingInstance";d:0.002;s:5:"Error";d:0.003;}}}
