@@ -100,7 +100,7 @@ class Client
     /**
      * @param T      $interface
      * @param string $baseUri
-     * @return T
+     * @return T|static
      */
     public static function createFromInterface(string $interface, string $baseUri = '')
     {
@@ -123,23 +123,20 @@ class Client
             'query' => $this->getQueryParams($arguments)
         ]);
 
-        $returnType = $this->currentMethod->getReturnType()->getName();
+        $returnType = $this->currentMethod->getReturnType()?->getName() ?? 'mixed';
 
         $this->currentMethod = null;
 
         $response = $this->client->request($verb, $pathSegment, $options);
 
-        $returnValue = match ($returnType) {
-            'array', 'json' => json_decode($response->getBody()->getContents() ?? '{}', true),
-            'void' => null,
+        return match ($returnType) {
+            'array' => json_decode($response->getBody()->getContents() ?? '{}', true),
+            'void', 'null' => null,
+            'bool', 'boolean' => true,
             'string' => $response->getBody()->getContents(),
-            'object' => json_decode($response->getBody()->getContents()),
+            'object' => json_decode($response->getBody()->getContents() ?? '{}'),
             default => $response
         };
-
-        if (is_null($returnValue)) return;
-
-        return $returnValue;
     }
 
     protected function throwBadMethodCallException(string $message = null): void
