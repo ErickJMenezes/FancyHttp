@@ -31,7 +31,7 @@ It's simple as that!
 ## How to install?
 (In development)
 ~~~shell
-$ composer install --no-dev erickjmenezes/fancyhttp
+$ composer require erickjmenezes/fancyhttp
 ~~~
 
 ## Documentation
