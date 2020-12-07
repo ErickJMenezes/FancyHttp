@@ -29,9 +29,11 @@ use Psr\Http\Message\ResponseInterface;
  */
 class Client
 {
+    protected ClientInterface $client;
+    protected \ReflectionClass $interface;
+    protected \ReflectionAttribute $apiAttribute;
     protected null|\ReflectionMethod $currentMethod;
     protected null|\ReflectionAttribute $currentMethodVerbAttribute;
-
     protected array $verbMap = [
         Get::class => 'get',
         Post::class => 'post',
@@ -40,16 +42,6 @@ class Client
         Head::class => 'head',
         Delete::class => 'delete'
     ];
-
-    protected array $availableMethods = [];
-
-    protected array $methods;
-
-    protected ClientInterface $client;
-
-    protected \ReflectionClass $interface;
-
-    protected \ReflectionAttribute $api;
 
     /**
      * ClientProxy constructor.
@@ -68,7 +60,7 @@ class Client
             if (count($apiAttributes) === 0) {
                 $this->throwInvalidArgumentException("Api attribute missing");
             }
-            $this->api = $apiAttributes[0];
+            $this->apiAttribute = $apiAttributes[0];
         } catch (\ReflectionException $e) {
             $this->throwInvalidArgumentException($e->getMessage());
         }
@@ -82,22 +74,12 @@ class Client
 
     protected function init(): void
     {
-        $apiArgs = $this->api->getArguments();
+        $apiArgs = $this->apiAttribute->getArguments();
+
         $this->client = new GuzzleClient([
             'base_uri' => $this->baseUri ?: $apiArgs['baseUri'] ?? $apiArgs[1] ?? '',
             'headers' => $apiArgs['headers'] ?? $apiArgs[0] ?? []
         ]);
-        $this->methods = $this->interface->getMethods();
-
-        foreach ($this->methods as $method) {
-            $this->availableMethods[$method->name] = [];
-            foreach ($method->getParameters() as $paramIndex => $param) {
-                try {
-                    $this->availableMethods[$method->name][$param->getPosition()] = $param->getDefaultValue();
-                } catch (\Throwable) {
-                }
-            }
-        }
     }
 
     /**
@@ -112,10 +94,13 @@ class Client
 
     public function __call(string $name, array $arguments)
     {
-        $this->availableMethods[$name] ?? $this->throwBadMethodCallException("Undefined method {$name}");
-        $arguments = $arguments + $this->availableMethods[$name];
+        if (!method_exists($this->interfaceClass, $name)) {
+            $this->throwBadMethodCallException("The method {$name} is not declared in {$this->interfaceClass}.");
+        }
 
         $this->loadState($name);
+
+        $arguments = $this->assertMethodSignature($arguments);
 
         $verb = $this->getVerb();
         $path = $this->replacePathParams($arguments, $this->getPath());
@@ -129,6 +114,10 @@ class Client
         return $this->castResponseToMethodReturnType($returnType, $response);
     }
 
+    /**
+     * @param string|null $message
+     * @throws \BadMethodCallException
+     */
     protected function throwBadMethodCallException(string $message = null): void
     {
         throw new \BadMethodCallException($message);
@@ -149,7 +138,7 @@ class Client
      */
     protected function loadReflectionMethod(string $method): \ReflectionMethod
     {
-        return $this->currentMethod ??= array_values(array_filter($this->methods, function (\ReflectionMethod $reflectionMethod) use ($method) {
+        return $this->currentMethod ??= array_values(array_filter($this->interface->getMethods(), function (\ReflectionMethod $reflectionMethod) use ($method) {
             return $reflectionMethod->name === $method;
         }))[0];
     }
@@ -312,5 +301,48 @@ class Client
             'object' => json_decode($stringResponse ?? '{}'),
             default => $response
         };
+    }
+
+    protected function assertMethodSignature(array $args)
+    {
+        $typeMap = [
+            "boolean" => 'bool',
+            "integer" => 'int',
+            "double" => 'float',
+            'float' => 'float',
+            "string" => 'string',
+            "array" => 'array',
+            "object" => 'object',
+            "resource" => 'resource',
+            "NULL" => 'null',
+            "unknown type" => 'mixed'
+        ];
+
+        foreach ($this->currentMethod->getParameters() as $paramIndex => $reflectionParameter) {
+            try {
+                $param = $args[$reflectionParameter->name] ??
+                    $args[$paramIndex] ??
+                    ($defaultValue = $reflectionParameter->getDefaultValue());
+            } catch (\ReflectionException) {
+                $this->throwBadMethodCallException("The parameter {$reflectionParameter->name} doesn't have a default value.");
+            }
+
+            if(isset($defaultValue)) {
+                $args[$reflectionParameter->getPosition()] = $defaultValue;
+                unset($defaultValue);
+                continue;
+            } elseif ($reflectionParameter->allowsNull() && is_null($param))
+                continue;
+            elseif ($reflectionParameter->hasType()) {
+                $paramType = $typeMap[gettype($param)];
+                $reflectionParameterType = (string)$reflectionParameter->getType();
+                if ($reflectionParameterType === 'mixed') continue;
+                elseif ($paramType !== $reflectionParameterType) {
+                    $this->throwInvalidArgumentException("The argument {$reflectionParameter->name} must be type of {$reflectionParameterType}, {$paramType} given.");
+                }
+            }
+        }
+
+        return $args;
     }
 }
