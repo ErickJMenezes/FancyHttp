@@ -294,11 +294,11 @@ class Client
         $stringResponse = $response->getBody()->getContents();
 
         return match ($returnType) {
-            'array' => json_decode($stringResponse ?? '{}', true),
+            'array' => json_decode($stringResponse ?: '{}', true),
             'void', 'null' => null,
             'bool' => true,
             'string' => $stringResponse,
-            'object' => json_decode($stringResponse ?? '{}'),
+            'object' => json_decode($stringResponse ?: '{}'),
             default => $response
         };
     }
@@ -340,9 +340,7 @@ class Client
 
                 if ($reflectionParameterType === 'mixed') continue;
                 elseif ($paramType === 'object') {
-                    if (!is_object($param)) {
-                        $throw();
-                    } elseif (!($param instanceof $reflectionParameterType)) {
+                    if (!is_object($param) || !($param instanceof $reflectionParameterType)) {
                         $throw();
                     }
                 } elseif ($paramType !== $reflectionParameterType) {
