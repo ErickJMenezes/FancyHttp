@@ -1,13 +1,13 @@
 <?php
 
 
-namespace ErickJMenezes\Http\Attributes;
+namespace ErickJMenezes\FancyHttp\Attributes;
 
 /**
  * Class Api
  *
  * @author ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\Http\Attributes
+ * @package ErickJMenezes\FancyHttp\Attributes
  */
 #[\Attribute(\Attribute::TARGET_CLASS)]
 class Api

@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use ErickJMenezes\Http\Client;
+use ErickJMenezes\FancyHttp\Client;
 use Psr\Http\Message\ResponseInterface;
 use Tests\Clients\TestCaseClient;
 
@@ -15,7 +15,7 @@ use Tests\Clients\TestCaseClient;
 class CastingTypesTest extends TestCase
 {
     /**
-     * @return \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient
+     * @return \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient
      */
     public function testCreatingInstance()
     {

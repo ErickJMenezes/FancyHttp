@@ -2,16 +2,16 @@
 
 namespace Tests\Clients;
 
-use ErickJMenezes\Http\Attributes\Api;
-use ErickJMenezes\Http\Attributes\Body;
-use ErickJMenezes\Http\Attributes\Delete;
-use ErickJMenezes\Http\Attributes\Get;
-use ErickJMenezes\Http\Attributes\HeaderParam;
-use ErickJMenezes\Http\Attributes\Patch;
-use ErickJMenezes\Http\Attributes\PathParam;
-use ErickJMenezes\Http\Attributes\Post;
-use ErickJMenezes\Http\Attributes\Put;
-use ErickJMenezes\Http\Attributes\QueryParams;
+use ErickJMenezes\FancyHttp\Attributes\Api;
+use ErickJMenezes\FancyHttp\Attributes\Body;
+use ErickJMenezes\FancyHttp\Attributes\Delete;
+use ErickJMenezes\FancyHttp\Attributes\Get;
+use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
+use ErickJMenezes\FancyHttp\Attributes\Patch;
+use ErickJMenezes\FancyHttp\Attributes\PathParam;
+use ErickJMenezes\FancyHttp\Attributes\Post;
+use ErickJMenezes\FancyHttp\Attributes\Put;
+use ErickJMenezes\FancyHttp\Attributes\QueryParams;
 use Psr\Http\Message\ResponseInterface;
 
 

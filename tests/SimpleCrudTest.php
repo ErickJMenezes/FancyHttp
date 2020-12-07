@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 
-use ErickJMenezes\Http\Client;
+use ErickJMenezes\FancyHttp\Client;
 use PHPUnit\Framework\TestCase;
 use Tests\Clients\TestCaseClient;
 
@@ -14,7 +14,7 @@ use Tests\Clients\TestCaseClient;
 class SimpleCrudTest extends TestCase
 {
     /**
-     * @return \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient
+     * @return \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient
      */
     public function testCreatingInstance()
     {
@@ -24,7 +24,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @param \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testGetTodos($client)
@@ -36,7 +36,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @param \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testGetTodoById($client)
@@ -47,7 +47,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @param \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testGetTodoByIdWithWrongType($client)
@@ -57,7 +57,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @param \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testGetTodoByIdStringable($client)
@@ -72,7 +72,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @param \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testCreateTodo($client)
@@ -90,7 +90,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @param \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testUpdateTodo($client)
@@ -104,7 +104,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @param \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testDeleteTodo($client)
@@ -114,7 +114,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @param \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testFilterTodosWithQueryString($client)
@@ -126,7 +126,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @param \ErickJMenezes\FancyHttp\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testQueryParamPlusQueryStringParameters($client)

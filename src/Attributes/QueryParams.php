@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\Http\Attributes;
+namespace ErickJMenezes\FancyHttp\Attributes;
 
 /**
  * Class QueryParams
@@ -9,7 +9,7 @@ namespace ErickJMenezes\Http\Attributes;
  * An key-value array to be used as query strings.
  *
  * @author ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\Http\Attributes
+ * @package ErickJMenezes\FancyHttp\Attributes
  */
 #[\Attribute(\Attribute::TARGET_PARAMETER)]
 class QueryParams

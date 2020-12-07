@@ -2,7 +2,7 @@
 
 
 use \Tests\Clients\InterfaceWithoutApiAttribute;
-use ErickJMenezes\Http\Client;
+use ErickJMenezes\FancyHttp\Client;
 use PHPUnit\Framework\TestCase;
 
 /**

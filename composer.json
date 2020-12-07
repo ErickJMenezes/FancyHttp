@@ -19,7 +19,7 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "ErickJMenezes\\Http\\": "src"
+            "ErickJMenezes\\FancyHttp\\": "src"
         }
     },
     "autoload-dev": {
