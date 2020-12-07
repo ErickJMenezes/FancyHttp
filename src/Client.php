@@ -64,7 +64,7 @@ class Client
         } catch (\ReflectionException $e) {
             $this->throwInvalidArgumentException($e->getMessage());
         }
-        $this->init();
+        $this->initClient();
     }
 
     protected function throwInvalidArgumentException(string $message = ''): void
@@ -72,7 +72,7 @@ class Client
         throw new \InvalidArgumentException($message);
     }
 
-    protected function init(): void
+    protected function initClient(): void
     {
         $apiArgs = $this->apiAttribute->getArguments();
 
@@ -102,7 +102,7 @@ class Client
 
         $arguments = $this->assertMethodSignature($arguments);
 
-        $verb = $this->getVerb();
+        $verb = $this->getHttpVerb();
         $path = $this->replacePathParams($arguments, $this->getPath());
         $options = $this->getRequestOptions($arguments);
         $returnType = $this->getCurrentMethodReturnType();
@@ -156,7 +156,7 @@ class Client
         $this->throwBadMethodCallException("The method {$method} does not have a required attribute");
     }
 
-    protected function getVerb(): string
+    protected function getHttpVerb(): string
     {
         return $this->verbMap[$this->currentMethodVerbAttribute->getName()];
     }
@@ -202,18 +202,18 @@ class Client
      * @param mixed $arguments
      * @return array
      */
-    protected function getRequestOptions(mixed $arguments): array
+    protected function getRequestOptions(array $arguments): array
     {
-        [$bodyType, $bodyContents] = $this->getBody($arguments);
+        [$bodyType, $bodyContents] = $this->getRequestBody($arguments);
 
         return array_filter([
-            'headers' => $this->getHeaderParams($arguments) + $this->getHeaders(),
+            'headers' => $this->getHeaderParams($arguments) + $this->getRequestHeaders(),
             $bodyType => $bodyContents,
             'query' => $this->getQueryParams($arguments)
         ]);
     }
 
-    protected function getBody(array $arguments): array
+    protected function getRequestBody(array $arguments): array
     {
         $body = ['body', null];
 
@@ -245,7 +245,7 @@ class Client
         return $headers;
     }
 
-    protected function getHeaders(): array
+    protected function getRequestHeaders(): array
     {
         $arguments = $this->currentMethodVerbAttribute->getArguments();
         return ($arguments['headers'] ?? $arguments[1] ?? []);
