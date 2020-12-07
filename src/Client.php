@@ -54,7 +54,10 @@ class Client
      * @param T      $interfaceClass
      * @param string $baseUri
      */
-    public function __construct(protected mixed $interfaceClass, protected ?string $baseUri = null)
+    public function __construct(
+        protected mixed $interfaceClass,
+        protected ?string $baseUri = null
+    )
     {
         try {
             $this->interface = new \ReflectionClass($interfaceClass);
