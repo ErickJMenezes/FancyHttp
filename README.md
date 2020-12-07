@@ -17,7 +17,7 @@ interface MyClient {
 }
 
 $myClient = Client::createFromInterface(
-    MyClient::class, // the interface fully qualified class name.
+    MyClient::class, // the fully qualified interface name.
     'http://localhost:9000/api/' // The webservice base uri.
 );
 
