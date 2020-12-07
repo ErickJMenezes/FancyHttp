@@ -3,7 +3,7 @@
 use PHPUnit\Framework\TestCase;
 use ErickJMenezes\Http\Client;
 use Psr\Http\Message\ResponseInterface;
-use Tests\Clients\TodoListClient;
+use Tests\Clients\TestCaseClient;
 
 
 /**
@@ -15,17 +15,17 @@ use Tests\Clients\TodoListClient;
 class CastingTypesTest extends TestCase
 {
     /**
-     * @return \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TodoListClient
+     * @return \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient
      */
     public function testCreatingInstance()
     {
-        $instance = Client::createFromInterface(TodoListClient::class);
+        $instance = Client::createFromInterface(TestCaseClient::class);
         $this->assertTrue((bool)$instance, 'instance not created');
         return $instance;
     }
 
     /**
-     * @param \Tests\Clients\TodoListClient $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testArray($client)
@@ -35,7 +35,7 @@ class CastingTypesTest extends TestCase
     }
 
     /**
-     * @param \Tests\Clients\TodoListClient $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testObject($client)
@@ -45,7 +45,7 @@ class CastingTypesTest extends TestCase
     }
 
     /**
-     * @param \Tests\Clients\TodoListClient $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testResponseInterface($client)
@@ -55,7 +55,7 @@ class CastingTypesTest extends TestCase
     }
 
     /**
-     * @param \Tests\Clients\TodoListClient $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testVoid($client)
@@ -65,7 +65,7 @@ class CastingTypesTest extends TestCase
     }
 
     /**
-     * @param \Tests\Clients\TodoListClient $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testString($client)
@@ -75,7 +75,7 @@ class CastingTypesTest extends TestCase
     }
 
     /**
-     * @param \Tests\Clients\TodoListClient $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testBoolean($client)
@@ -85,7 +85,7 @@ class CastingTypesTest extends TestCase
     }
 
     /**
-     * @param \Tests\Clients\TodoListClient $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testMixed($client)
@@ -95,7 +95,7 @@ class CastingTypesTest extends TestCase
     }
 
     /**
-     * @param \Tests\Clients\TodoListClient $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testNone($client)

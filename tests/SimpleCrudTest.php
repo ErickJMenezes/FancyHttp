@@ -3,7 +3,7 @@
 
 use ErickJMenezes\Http\Client;
 use PHPUnit\Framework\TestCase;
-use Tests\Clients\TodoListClient;
+use Tests\Clients\TestCaseClient;
 
 /**
  * Class VerbsAndSomeParametersTest
@@ -14,17 +14,17 @@ use Tests\Clients\TodoListClient;
 class SimpleCrudTest extends TestCase
 {
     /**
-     * @return \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TodoListClient
+     * @return \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient
      */
     public function testCreatingInstance()
     {
-        $instance = Client::createFromInterface(TodoListClient::class);
+        $instance = Client::createFromInterface(TestCaseClient::class);
         $this->assertTrue((bool)$instance, 'instance not created');
         return $instance;
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TodoListClient $client
+     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testGetTodos($client)
@@ -36,7 +36,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TodoListClient $client
+     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testGetTodoById($client)
@@ -47,7 +47,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TodoListClient $client
+     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testCreateTodo($client)
@@ -65,7 +65,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TodoListClient $client
+     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testUpdateTodo($client)
@@ -79,7 +79,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TodoListClient $client
+     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testDeleteTodo($client)
@@ -89,7 +89,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TodoListClient $client
+     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testFilterTodosWithQueryString($client)
@@ -101,7 +101,7 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TodoListClient $client
+     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
     public function testQueryParamPlusQueryStringParameters($client)

@@ -17,6 +17,7 @@ use ErickJMenezes\Http\Attributes\Put;
 use ErickJMenezes\Http\Attributes\QueryParams;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
+use Psr\Http\Message\ResponseInterface;
 
 
 /**
@@ -29,6 +30,7 @@ use GuzzleHttp\ClientInterface;
 class Client
 {
     protected null|\ReflectionMethod $currentMethod;
+    protected null|\ReflectionAttribute $currentMethodVerbAttribute;
 
     protected array $verbMap = [
         Get::class => 'get',
@@ -55,12 +57,12 @@ class Client
      * @param T      $interfaceClass
      * @param string $baseUri
      */
-    private function __construct(protected mixed $interfaceClass, protected string $baseUri = '')
+    public function __construct(protected mixed $interfaceClass, protected ?string $baseUri = null)
     {
         try {
             $this->interface = new \ReflectionClass($interfaceClass);
             if (!$this->interface->isInterface()) {
-                $this->throwInvalidArgumentException("The parameter must be an api interface.");
+                $this->throwInvalidArgumentException("The first argument must be a Interface::class.");
             }
             $apiAttributes = $this->interface->getAttributes(Api::class);
             if (count($apiAttributes) === 0) {
@@ -75,14 +77,15 @@ class Client
 
     protected function throwInvalidArgumentException(string $message = ''): void
     {
-        throw new \InvalidArgumentException();
+        throw new \InvalidArgumentException($message);
     }
 
     protected function init(): void
     {
-        [$baseUri] = $this->api->getArguments() + [$this->baseUri];
+        $apiArgs = $this->api->getArguments();
         $this->client = new GuzzleClient([
-            'base_uri' => $baseUri
+            'base_uri' => $this->baseUri ?: $apiArgs['baseUri'] ?? $apiArgs[1] ?? '',
+            'headers' => $apiArgs['headers'] ?? $apiArgs[0] ?? []
         ]);
         $this->methods = $this->interface->getMethods();
 
@@ -102,7 +105,7 @@ class Client
      * @param string $baseUri
      * @return T|static
      */
-    public static function createFromInterface(string $interface, string $baseUri = '')
+    public static function createFromInterface(string $interface, string $baseUri = null)
     {
         return new static($interface, $baseUri);
     }
@@ -110,33 +113,20 @@ class Client
     public function __call(string $name, array $arguments)
     {
         $this->availableMethods[$name] ?? $this->throwBadMethodCallException("Undefined method {$name}");
-
         $arguments = $arguments + $this->availableMethods[$name];
 
-        $verb = $this->getVerb($name);
-        $pathSegment = $this->replacePathSegment($arguments, $this->getPathSegment($name));
-        [$bodyType, $bodyContents] = $this->getBody($arguments);
+        $this->loadState($name);
 
-        $options = array_filter([
-            'headers' => $this->getHeaderParams($arguments) + $this->getHeaders($name),
-            $bodyType => $bodyContents,
-            'query' => $this->getQueryParams($arguments)
-        ]);
+        $verb = $this->getVerb();
+        $path = $this->replacePathParams($arguments, $this->getPath());
+        $options = $this->getRequestOptions($arguments);
+        $returnType = $this->getCurrentMethodReturnType();
 
-        $returnType = $this->currentMethod->getReturnType()?->getName() ?? 'mixed';
+        $this->cleanState();
 
-        $this->currentMethod = null;
+        $response = $this->client->request($verb, $path, $options);
 
-        $response = $this->client->request($verb, $pathSegment, $options);
-
-        return match ($returnType) {
-            'array' => json_decode($response->getBody()->getContents() ?? '{}', true),
-            'void', 'null' => null,
-            'bool', 'boolean' => true,
-            'string' => $response->getBody()->getContents(),
-            'object' => json_decode($response->getBody()->getContents() ?? '{}'),
-            default => $response
-        };
+        return $this->castResponseToMethodReturnType($returnType, $response);
     }
 
     protected function throwBadMethodCallException(string $message = null): void
@@ -144,98 +134,183 @@ class Client
         throw new \BadMethodCallException($message);
     }
 
-    protected function getVerb(string $method): string
+    /**
+     * @param string $name
+     */
+    protected function loadState(string $name): void
     {
-        $attribute = $this->getMethodAttribute($method);
-        return $this->verbMap[$attribute->getName()];
-    }
-
-    protected function getMethodAttribute(string $method): \ReflectionAttribute
-    {
-        $m = $this->getReflectedMethodByName($method);
-        return $m->getAttributes()[0];
+        $this->loadReflectionMethod($name);
+        $this->loadVerbAttribute($name);
     }
 
     /**
      * @param string $method
      * @return mixed
      */
-    protected function getReflectedMethodByName(string $method): \ReflectionMethod
+    protected function loadReflectionMethod(string $method): \ReflectionMethod
     {
         return $this->currentMethod ??= array_values(array_filter($this->methods, function (\ReflectionMethod $reflectionMethod) use ($method) {
             return $reflectionMethod->name === $method;
         }))[0];
     }
 
-    protected function replacePathSegment(array $params, string $pathSegment): string
+    protected function loadVerbAttribute(string $method): \ReflectionAttribute
     {
-        foreach ($this->currentMethod->getParameters() as $rParamKey => $rParam) {
-            $rParamAttribute = $rParam->getAttributes(PathParam::class)[0] ?? null;
-            if (!$rParamAttribute) continue;
-            $paramName = $rParamAttribute->getArguments()[0];
-            $paramValue = $this->get($rParam->name, $params, $rParamKey);
-            $pathSegment = preg_replace('/{' . $paramName . '}/', $paramValue, $pathSegment);
-        }
+        if ($attr = $this->currentMethodVerbAttribute ?? null) return $attr;
 
-        return $pathSegment;
+        foreach ($this->verbMap as $attributeClass => $verbName) {
+            $attributes = $this->currentMethod->getAttributes($attributeClass);
+            if (count($attributes) > 0) {
+                return $this->currentMethodVerbAttribute = $attributes[0];
+            };
+        }
+        $this->throwBadMethodCallException("The method {$method} does not have a required attribute");
     }
 
-    protected function get($key, array $target, $fallbackKey, $default = null)
+    protected function getVerb(): string
     {
-        if (array_key_exists($key, $target)) {
-            return $target[$key];
-        } else {
-            return $target[$fallbackKey] ?? $default;
-        }
+        return $this->verbMap[$this->currentMethodVerbAttribute->getName()];
     }
 
-    protected function getPathSegment(string $method): string
+    protected function replacePathParams(array $params, string $path): string
     {
-        $attribute = $this->getMethodAttribute($method);
-        return $attribute->getArguments()[0];
+        $this->forEachParametersOfAttributeType(
+            PathParam::class,
+            function (\ReflectionAttribute $attribute, \ReflectionParameter $parameter, int|string $parameterIndex) use (&$path, $params) {
+                [$pathParamName] = $attribute->getArguments();
+                $pathParamValue = $params[$parameter->name] ?? $params[$parameterIndex];
+                $path = preg_replace('/{' . $pathParamName . '}/', $pathParamValue, $path);
+            }
+        );
+        return $path;
+    }
+
+    /**
+     * Iterates through parameters of a given attribute class type.
+     *
+     * @param string   $attributeClass
+     * @param \Closure $closure
+     * @return $this
+     */
+    protected function forEachParametersOfAttributeType(string $attributeClass, \Closure $closure): static
+    {
+        foreach ($this->currentMethod->getParameters() as $reflectionParameterKey => $reflectionParameter) {
+            $reflectionAttributes = $reflectionParameter->getAttributes($attributeClass);
+            foreach ($reflectionAttributes as $reflectionAttributeKey => $reflectionAttribute) {
+                $closure($reflectionAttribute, $reflectionParameter, $reflectionParameterKey);
+            }
+        }
+        return $this;
+    }
+
+    protected function getPath(): string
+    {
+        [$path] = $this->currentMethodVerbAttribute->getArguments();
+        return $path;
+    }
+
+    /**
+     * @param mixed $arguments
+     * @return array
+     */
+    protected function getRequestOptions(mixed $arguments): array
+    {
+        [$bodyType, $bodyContents] = $this->getBody($arguments);
+
+        return array_filter([
+            'headers' => $this->getHeaderParams($arguments) + $this->getHeaders(),
+            $bodyType => $bodyContents,
+            'query' => $this->getQueryParams($arguments)
+        ]);
     }
 
     protected function getBody(array $arguments): array
     {
-        $rParams = $this->currentMethod->getParameters();
-        foreach ($rParams as $key => $reflectionParameter) {
-            $rParamAttribute = $reflectionParameter->getAttributes(Body::class)[0] ?? null;
-            if (!$rParamAttribute) continue;
-            [$type] = $rParamAttribute->getArguments();
-            return [$type === Body::TYPE_RAW ? 'body' : 'json', $arguments[$key]];
-        }
-        return ['body', null];
+        $body = ['body', null];
+
+        $this->forEachParametersOfAttributeType(
+            Body::class,
+            function (\ReflectionAttribute $attribute, \ReflectionParameter $parameter, $parameterIndex) use ($arguments, &$body) {
+                [$type] = $attribute->getArguments();
+                $typeName = 'body';
+                if ($type === Body::TYPE_JSON) $typeName = 'json';
+                $body = [$typeName, $arguments[$parameterIndex]];
+            }
+        );
+
+        return $body;
     }
 
     protected function getHeaderParams(array $arguments): array
     {
         $headers = [];
 
-        foreach ($this->currentMethod->getParameters() as $rParamKey => $rParam) {
-            $rParamAttribute = $rParam->getAttributes(HeaderParam::class)[0] ?? null;
-            if (!$rParamAttribute) continue;
-            $headers[$rParamAttribute->getArguments()[0]] = $this->get($rParam->name, $arguments, $rParamKey);
-        }
+        $this->forEachParametersOfAttributeType(
+            HeaderParam::class,
+            function (\ReflectionAttribute $attribute, \ReflectionParameter $parameter, $paramIndex) use ($arguments, &$headers) {
+                [$headerName] = $attribute->getArguments();
+                $headers[$headerName] = $arguments[$parameter->name] ?? $arguments[$paramIndex];
+            }
+        );
 
         return $headers;
     }
 
-    protected function getHeaders(string $method): array
+    protected function getHeaders(): array
     {
-        $attribute = $this->getMethodAttribute($method);
-        return $attribute->getArguments()[2] ?? [];
+        $arguments = $this->currentMethodVerbAttribute->getArguments();
+        return ($arguments['headers'] ?? $arguments[1] ?? []);
     }
 
     protected function getQueryParams(array $params): array
     {
         $query = [];
 
-        foreach ($this->currentMethod->getParameters() as $rParamKey => $rParam) {
-            $rParamAttribute = $rParam->getAttributes(QueryParams::class)[0] ?? null;
-            if (!$rParamAttribute) continue;
-            $query = $query + $this->get($rParam->name, $params, $rParamKey);
-        }
+        $this->forEachParametersOfAttributeType(
+            QueryParams::class,
+            function (\ReflectionAttribute $attribute, \ReflectionParameter $parameter, $paramIndex) use ($params, &$query) {
+                $query = $query + ($params[$parameter->name] ?? $params[$paramIndex]);
+            }
+        );
 
         return $query;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getCurrentMethodReturnType(): string
+    {
+        return $this->currentMethod->hasReturnType() ?
+            $this->currentMethod->getReturnType()->getName() :
+            'mixed';
+    }
+
+    /**
+     * Set null for currentMethod and currentMethodVerbAttribute
+     */
+    protected function cleanState()
+    {
+        $this->currentMethod = null;
+        $this->currentMethodVerbAttribute = null;
+    }
+
+    /**
+     * @param string                              $returnType
+     * @param \Psr\Http\Message\ResponseInterface $response
+     * @return bool|mixed|string|null
+     */
+    protected function castResponseToMethodReturnType(string $returnType, ResponseInterface $response): mixed
+    {
+        $stringResponse = $response->getBody()->getContents();
+
+        return match ($returnType) {
+            'array' => json_decode($stringResponse ?? '{}', true),
+            'void', 'null' => null,
+            'bool' => true,
+            'string' => $stringResponse,
+            'object' => json_decode($stringResponse ?? '{}'),
+            default => $response
+        };
     }
 }

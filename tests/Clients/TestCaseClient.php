@@ -15,8 +15,8 @@ use ErickJMenezes\Http\Attributes\QueryParams;
 use Psr\Http\Message\ResponseInterface;
 
 
-#[Api('https://jsonplaceholder.typicode.com/')]
-interface TodoListClient
+#[Api(baseUri: 'https://jsonplaceholder.typicode.com/')]
+interface TestCaseClient
 {
     #[Get('todos')]
     public function getTodos(#[QueryParams] array $query = []): array;
@@ -48,7 +48,7 @@ interface TodoListClient
         #[QueryParams] array $query = []
     ): array;
 
-    // For the casting types test.
+    // Casting return types test.
 
     #[Get('todos/{id}')]
     public function getTodoByIdArray(#[PathParam('id')] int $id): array;
