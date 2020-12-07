@@ -4,6 +4,8 @@
 namespace ErickJMenezes\FancyHttp;
 
 
+use BadMethodCallException;
+use Closure;
 use ErickJMenezes\FancyHttp\Attributes\Api;
 use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\Delete;
@@ -15,9 +17,16 @@ use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Post;
 use ErickJMenezes\FancyHttp\Attributes\Put;
 use ErickJMenezes\FancyHttp\Attributes\QueryParams;
+use Exception;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
+use ReflectionAttribute;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
+use ReflectionParameter;
 
 
 /**
@@ -25,19 +34,18 @@ use Psr\Http\Message\ResponseInterface;
  *
  * @author ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package ErickJMenezes\FancyHttp
- * @template T
  */
 class Client
 {
     protected ClientInterface $client;
 
-    protected \ReflectionClass $interface;
+    protected ReflectionClass $interface;
 
-    protected \ReflectionAttribute $apiAttribute;
+    protected ReflectionAttribute $apiAttribute;
 
-    protected null|\ReflectionMethod $currentMethod;
+    protected ReflectionMethod $currentMethod;
 
-    protected null|\ReflectionAttribute $currentMethodVerbAttribute;
+    protected ReflectionAttribute $currentMethodVerbAttribute;
 
     protected array $verbMap = [
         Get::class => 'get',
@@ -48,19 +56,13 @@ class Client
         Delete::class => 'delete'
     ];
 
-    /**
-     * ClientProxy constructor.
-     *
-     * @param T      $interfaceClass
-     * @param string $baseUri
-     */
     public function __construct(
         protected mixed $interfaceClass,
         protected ?string $baseUri = null
     )
     {
         try {
-            $this->interface = new \ReflectionClass($interfaceClass);
+            $this->interface = new ReflectionClass($interfaceClass);
             if (!$this->interface->isInterface()) {
                 $this->throwInvalidArgumentException("The first argument must be a YourClientInterface::class.");
             }
@@ -69,7 +71,7 @@ class Client
                 $this->throwInvalidArgumentException("Api attribute missing");
             }
             $this->apiAttribute = $apiAttributes[0];
-        } catch (\ReflectionException $e) {
+        } catch (ReflectionException $e) {
             $this->throwInvalidArgumentException($e->getMessage());
         }
         $this->initClient();
@@ -77,7 +79,7 @@ class Client
 
     protected function throwInvalidArgumentException(string $message = ''): void
     {
-        throw new \InvalidArgumentException($message);
+        throw new InvalidArgumentException($message);
     }
 
     protected function initClient(): void
@@ -91,11 +93,11 @@ class Client
     }
 
     /**
-     * @param T      $interface
-     * @param string $baseUri
-     * @return T|static
+     * @param string      $interface
+     * @param string|null $baseUri
+     * @return static
      */
-    public static function createFromInterface(string $interface, string $baseUri = null)
+    public static function createFromInterface(string $interface, string $baseUri = null): static
     {
         return new static($interface, $baseUri);
     }
@@ -106,36 +108,30 @@ class Client
             $this->throwBadMethodCallException("The method {$name} is not declared in {$this->interfaceClass}.");
         }
 
-        try {
-            $this->loadState($name);
-            $arguments = $this->assertMethodSignature($arguments);
+        if (empty($this->currentMethod) || $this->currentMethod->getName() !== $name) $this->loadState($name);
 
-            $verb = $this->getHttpVerb();
-            $path = $this->replacePathParams($arguments, $this->getPath());
-            $options = $this->getRequestOptions($arguments);
-            $returnType = $this->getCurrentMethodReturnType();
+        $arguments = $this->assertMethodSignature($arguments);
 
-            return $this->castResponseToMethodReturnType(
-                $returnType,
-                $this->client->request($verb, $path, $options)
-            );
-        } finally {
-            $this->cleanState();
-        }
+        $verb = $this->getHttpVerb();
+        $path = $this->replacePathParams($arguments, $this->getPath());
+        $options = $this->getRequestOptions($arguments);
+        $returnType = $this->getCurrentMethodReturnType();
+
+        return $this->castResponseToMethodReturnType(
+            $returnType,
+            $this->client->request($verb, $path, $options)
+        );
     }
 
     /**
-     * @param string|null $message
+     * @param string $message
      * @throws \BadMethodCallException
      */
-    protected function throwBadMethodCallException(string $message = null): void
+    protected function throwBadMethodCallException(string $message = ''): void
     {
-        throw new \BadMethodCallException($message);
+        throw new BadMethodCallException($message);
     }
 
-    /**
-     * @param string $name
-     */
     protected function loadState(string $name): void
     {
         $this->loadReflectionMethod($name);
@@ -144,27 +140,30 @@ class Client
 
     /**
      * @param string $method
-     * @return mixed
+     * @return ReflectionMethod
      */
-    protected function loadReflectionMethod(string $method): \ReflectionMethod
+    protected function loadReflectionMethod(string $method): ReflectionMethod
     {
-        return $this->currentMethod ??= array_values(
+        return $this->currentMethod = array_values(
             array_filter(
                 $this->interface->getMethods(),
-                fn(\ReflectionMethod $reflectionMethod) => $reflectionMethod->name === $method
+                fn(ReflectionMethod $reflectionMethod) => $reflectionMethod->name === $method
             )
         )[0];
     }
 
-    protected function loadVerbAttribute(string $method): \ReflectionAttribute
+    /**
+     * @param string $method
+     * @return \ReflectionAttribute
+     * @throws \BadMethodCallException
+     */
+    protected function loadVerbAttribute(string $method): ReflectionAttribute
     {
-        if ($attr = $this->currentMethodVerbAttribute ?? null) return $attr;
-
         foreach ($this->verbMap as $attributeClass => $verbName) {
             $attributes = $this->currentMethod->getAttributes($attributeClass);
             if (count($attributes) > 0) {
                 return $this->currentMethodVerbAttribute = $attributes[0];
-            };
+            }
         }
         $this->throwBadMethodCallException("The method {$method} does not have a required attribute");
     }
@@ -178,7 +177,7 @@ class Client
     {
         $this->forEachParametersOfAttributeType(
             PathParam::class,
-            function (\ReflectionAttribute $attribute, \ReflectionParameter $parameter, int|string $parameterIndex) use (&$path, $params) {
+            function (ReflectionAttribute $attribute, ReflectionParameter $parameter, int|string $parameterIndex) use (&$path, $params) {
                 [$pathParamName] = $attribute->getArguments();
                 $pathParamValue = $params[$parameter->name] ?? $params[$parameterIndex];
                 $path = preg_replace('/{' . $pathParamName . '}/', $pathParamValue, $path);
@@ -194,7 +193,7 @@ class Client
      * @param \Closure $closure
      * @return $this
      */
-    protected function forEachParametersOfAttributeType(string $attributeClass, \Closure $closure): static
+    protected function forEachParametersOfAttributeType(string $attributeClass, Closure $closure): static
     {
         foreach ($this->currentMethod->getParameters() as $reflectionParameterKey => $reflectionParameter) {
             $reflectionAttributes = $reflectionParameter->getAttributes($attributeClass);
@@ -232,7 +231,7 @@ class Client
 
         $this->forEachParametersOfAttributeType(
             Body::class,
-            function (\ReflectionAttribute $attribute, \ReflectionParameter $parameter, $parameterIndex) use ($arguments, &$body) {
+            function (ReflectionAttribute $attribute, ReflectionParameter $parameter, $parameterIndex) use ($arguments, &$body) {
                 [$type] = $attribute->getArguments();
                 $typeName = 'body';
                 if ($type === Body::TYPE_JSON) $typeName = 'json';
@@ -249,7 +248,7 @@ class Client
 
         $this->forEachParametersOfAttributeType(
             HeaderParam::class,
-            function (\ReflectionAttribute $attribute, \ReflectionParameter $parameter, $paramIndex) use ($arguments, &$headers) {
+            function (ReflectionAttribute $attribute, ReflectionParameter $parameter, $paramIndex) use ($arguments, &$headers) {
                 [$headerName] = $attribute->getArguments();
                 $headers[$headerName] = $arguments[$parameter->name] ?? $arguments[$paramIndex];
             }
@@ -270,7 +269,7 @@ class Client
 
         $this->forEachParametersOfAttributeType(
             QueryParams::class,
-            function (\ReflectionAttribute $attribute, \ReflectionParameter $parameter, $paramIndex) use ($params, &$query) {
+            function (ReflectionAttribute $attribute, ReflectionParameter $parameter, $paramIndex) use ($params, &$query) {
                 $query = $query + ($params[$parameter->name] ?? $params[$paramIndex]);
             }
         );
@@ -289,18 +288,9 @@ class Client
     }
 
     /**
-     * Set null for currentMethod and currentMethodVerbAttribute
-     */
-    protected function cleanState()
-    {
-        $this->currentMethod = null;
-        $this->currentMethodVerbAttribute = null;
-    }
-
-    /**
      * @param string                              $returnType
      * @param \Psr\Http\Message\ResponseInterface $response
-     * @return bool|mixed|string|null
+     * @return mixed
      */
     protected function castResponseToMethodReturnType(string $returnType, ResponseInterface $response): mixed
     {
@@ -316,7 +306,11 @@ class Client
         };
     }
 
-    protected function assertMethodSignature(array $args)
+    /**
+     * @param array $args
+     * @return array
+     */
+    protected function assertMethodSignature(array $args): array
     {
         $typeMap = [
             "boolean" => 'bool',
@@ -336,7 +330,7 @@ class Client
                 $param = $args[$reflectionParameter->name] ??
                     $args[$paramIndex] ??
                     ($defaultValue = $reflectionParameter->getDefaultValue());
-            } catch (\ReflectionException) {
+            } catch (ReflectionException) {
                 $this->throwBadMethodCallException("The parameter {$reflectionParameter->name} doesn't have a default value.");
             }
 
