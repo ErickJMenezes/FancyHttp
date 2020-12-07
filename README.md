@@ -1,5 +1,5 @@
 # Fancy HTTP
-#### A http client to implements your client interfaces for you! 
+#### A http client to implements your clients interfaces for you! 
 
 Look the example down below:
 ~~~php
