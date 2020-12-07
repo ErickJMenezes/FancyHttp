@@ -1,7 +1,7 @@
 <?php
 
 
-use Clients\InterfaceWithoutApiAttribute;
+use \Tests\Clients\InterfaceWithoutApiAttribute;
 use ErickJMenezes\Http\Client;
 use PHPUnit\Framework\TestCase;
 
@@ -16,6 +16,6 @@ class InterfaceTest extends TestCase
     public function testTryToCreateAClientWithoutApiAttribute()
     {
         $this->expectException(InvalidArgumentException::class);
-        $client = Client::createFromInterface(InterfaceWithoutApiAttribute::class);
+        Client::createFromInterface(InterfaceWithoutApiAttribute::class);
     }
 }

@@ -1,7 +1,8 @@
 <?php
 
 
-namespace Clients;
+namespace Tests\Clients;
+
 
 
 interface InterfaceWithoutApiAttribute

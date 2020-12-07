@@ -30,10 +30,15 @@ use Psr\Http\Message\ResponseInterface;
 class Client
 {
     protected ClientInterface $client;
+
     protected \ReflectionClass $interface;
+
     protected \ReflectionAttribute $apiAttribute;
+
     protected null|\ReflectionMethod $currentMethod;
+
     protected null|\ReflectionAttribute $currentMethodVerbAttribute;
+
     protected array $verbMap = [
         Get::class => 'get',
         Post::class => 'post',
@@ -54,7 +59,7 @@ class Client
         try {
             $this->interface = new \ReflectionClass($interfaceClass);
             if (!$this->interface->isInterface()) {
-                $this->throwInvalidArgumentException("The first argument must be a Interface::class.");
+                $this->throwInvalidArgumentException("The first argument must be a YourClientInterface::class.");
             }
             $apiAttributes = $this->interface->getAttributes(Api::class);
             if (count($apiAttributes) === 0) {
@@ -327,7 +332,7 @@ class Client
                 $this->throwBadMethodCallException("The parameter {$reflectionParameter->name} doesn't have a default value.");
             }
 
-            if(isset($defaultValue)) {
+            if (isset($defaultValue)) {
                 $args[$reflectionParameter->getPosition()] = $defaultValue;
                 unset($defaultValue);
                 continue;
