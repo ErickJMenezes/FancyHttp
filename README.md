@@ -12,13 +12,13 @@ use ErickJMenezes\FancyHttp\Client;
 interface MyClient {
     #[Get('todos/{id}')]
     public function getTodoById(
-        #[PathParam('id')] string $id
-    ): array; // the response will be auto casted to array.
+        #[PathParam('id')] int $id
+    ): array; // the response will be automatically casted to array.
 }
 
 $myClient = Client::createFromInterface(
-    MyClient::class, // uses the interface fully qualified class name.
-    'http://localhost:9000/api/' // The webservices base uri.
+    MyClient::class, // the interface fully qualified class name.
+    'http://localhost:9000/api/' // The webservice base uri.
 );
 
 // Call the method declared in interface.
