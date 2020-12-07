@@ -2,4 +2,4 @@
 .vscode
 vendor
 .phpunit.cache/
-.phpunit.result.cache
+./.phpunit.result.cache
