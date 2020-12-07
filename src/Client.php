@@ -143,9 +143,12 @@ class Client
      */
     protected function loadReflectionMethod(string $method): \ReflectionMethod
     {
-        return $this->currentMethod ??= array_values(array_filter($this->interface->getMethods(), function (\ReflectionMethod $reflectionMethod) use ($method) {
-            return $reflectionMethod->name === $method;
-        }))[0];
+        return $this->currentMethod ??= array_values(
+            array_filter(
+                $this->interface->getMethods(),
+                fn(\ReflectionMethod $reflectionMethod) => $reflectionMethod->name === $method
+            )
+        )[0];
     }
 
     protected function loadVerbAttribute(string $method): \ReflectionAttribute
