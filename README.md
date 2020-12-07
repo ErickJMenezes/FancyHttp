@@ -8,28 +8,35 @@ use ErickJMenezes\FancyHttp\Attributes\Get;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Client;
 
-#[Api]
+/**
+ * To-do list microservice interface
+ */
+#[Api] // Api attribute
 interface MyClient {
-    #[Get('todos/{id}')]
-    public function getTodoById(
-        #[PathParam('id')] int $id
-    ): array; // the response will be automatically casted to array.
+
+    /**
+    * @param int $id The id will be used to replace the path parameter "id".
+    * @return array The Response will be automatically casted to the type
+    *               declared in the method's signature.
+    */
+    #[Get('todos/{id}')] // The endpoint
+    public function getTodoById(#[PathParam('id')] int $id): array;
 }
 
-$myClient = Client::createFromInterface(
-    MyClient::class, // the fully qualified interface name.
-    'http://localhost:9000/api/' // The webservice base uri.
-);
+// The Client class accepts two parameters, the first is a
+// fully qualified interface name and the second is the base uri.
+$myClient = Client::createFromInterface(MyClient::class, 'http://localhost:9000/api/');
 
-// Call the method declared in interface.
+// Now we have everything we need to use our client.
+// Call the method declared in MyClient.
 $todo = $myClient->getTodoById(1);
 
-echo $todo['description']; // echo the todo's description
+// Do something with the response...
+printf($todo['title']);
 ~~~
 It's simple as that!
 
 ## How to install?
-(In development)
 ~~~shell
 $ composer require erickjmenezes/fancyhttp
 ~~~
