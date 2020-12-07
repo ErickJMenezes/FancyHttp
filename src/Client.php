@@ -103,20 +103,22 @@ class Client
             $this->throwBadMethodCallException("The method {$name} is not declared in {$this->interfaceClass}.");
         }
 
-        $this->loadState($name);
+        try {
+            $this->loadState($name);
+            $arguments = $this->assertMethodSignature($arguments);
 
-        $arguments = $this->assertMethodSignature($arguments);
+            $verb = $this->getHttpVerb();
+            $path = $this->replacePathParams($arguments, $this->getPath());
+            $options = $this->getRequestOptions($arguments);
+            $returnType = $this->getCurrentMethodReturnType();
 
-        $verb = $this->getHttpVerb();
-        $path = $this->replacePathParams($arguments, $this->getPath());
-        $options = $this->getRequestOptions($arguments);
-        $returnType = $this->getCurrentMethodReturnType();
-
-        $this->cleanState();
-
-        $response = $this->client->request($verb, $path, $options);
-
-        return $this->castResponseToMethodReturnType($returnType, $response);
+            return $this->castResponseToMethodReturnType(
+                $returnType,
+                $this->client->request($verb, $path, $options)
+            );
+        } finally {
+            $this->cleanState();
+        }
     }
 
     /**
