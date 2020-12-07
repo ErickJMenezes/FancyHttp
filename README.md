@@ -29,7 +29,7 @@ echo $todo['description']; // echo the todo's description
 It's simple as that!
 
 ## How to install?
-(Not published yet)
+(In development)
 ~~~shell
 $ composer install --no-dev erickjmenezes/fancyhttp
 ~~~
