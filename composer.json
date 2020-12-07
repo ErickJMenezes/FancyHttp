@@ -1,6 +1,6 @@
 {
-    "name": "erickjmenezes/http",
-    "description": "Http Client",
+    "name": "erickjmenezes/fancyhttp",
+    "description": "A fancy http client using PHP 8.0 attributes.",
     "type": "library",
     "require": {
         "php": "^8.0",
