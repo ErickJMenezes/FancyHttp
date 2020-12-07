@@ -336,9 +336,17 @@ class Client
             elseif ($reflectionParameter->hasType()) {
                 $paramType = $typeMap[gettype($param)];
                 $reflectionParameterType = (string)$reflectionParameter->getType();
+                $throw = fn() => $this->throwInvalidArgumentException("The parameter {$reflectionParameter->name} must be of type {$reflectionParameterType}, {$paramType} given.");
+
                 if ($reflectionParameterType === 'mixed') continue;
-                elseif ($paramType !== $reflectionParameterType) {
-                    $this->throwInvalidArgumentException("The argument {$reflectionParameter->name} must be type of {$reflectionParameterType}, {$paramType} given.");
+                elseif ($paramType === 'object') {
+                    if (!is_object($param)) {
+                        $throw();
+                    } elseif (!($param instanceof $reflectionParameterType)) {
+                        $throw();
+                    }
+                } elseif ($paramType !== $reflectionParameterType) {
+                    $throw();
                 }
             }
         }

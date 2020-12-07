@@ -24,6 +24,9 @@ interface TestCaseClient
     #[Get('todos/{id}')]
     public function getTodoById(#[PathParam('id')] int $id): array;
 
+    #[Get('todos/{id}')]
+    public function getTodoByIdStringableParam(#[PathParam('id')] \Stringable $id): bool;
+
     #[Post('todos')]
     public function createTodo(#[Body(Body::TYPE_JSON)] array $body): array;
 

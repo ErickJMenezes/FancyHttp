@@ -50,6 +50,31 @@ class SimpleCrudTest extends TestCase
      * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
+    public function testGetTodoByIdWithWrongType($client)
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $response = $client->getTodoById('1');
+    }
+
+    /**
+     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @depends testCreatingInstance
+     */
+    public function testGetTodoByIdStringable($client)
+    {
+        $response = $client->getTodoByIdStringableParam(new class implements \Stringable {
+            public function __toString(): string
+            {
+                return '1';
+            }
+        });
+        self::assertTrue($response);
+    }
+
+    /**
+     * @param \ErickJMenezes\Http\Client|mixed|\Tests\Clients\TestCaseClient $client
+     * @depends testCreatingInstance
+     */
     public function testCreateTodo($client)
     {
         $response = $client->createTodo([
