@@ -1,4 +1,4 @@
-<?php declare(strict_types = 1);
+<?php declare(strict_types=1);
 
 
 use ErickJMenezes\Http\Client;
@@ -120,7 +120,7 @@ class SimpleCrudTest extends TestCase
     public function testFilterTodosWithQueryString($client)
     {
         $response = $client->getTodos(['id' => 1]);
-        self::assertTrue(count($response) === 1, 'Response is not filtred');
+        self::assertTrue(count($response) === 1, 'Response is not filtered');
         $user = $response[0];
         $this->assertArrayHasKey('id', $user, 'Response is invalid');
     }
