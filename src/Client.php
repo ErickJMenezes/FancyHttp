@@ -9,17 +9,21 @@ use Closure;
 use ErickJMenezes\FancyHttp\Attributes\Api;
 use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\Delete;
+use ErickJMenezes\FancyHttp\Attributes\FormParams;
 use ErickJMenezes\FancyHttp\Attributes\Get;
 use ErickJMenezes\FancyHttp\Attributes\Head;
 use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
+use ErickJMenezes\FancyHttp\Attributes\HttpVersion;
+use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\Patch;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Post;
 use ErickJMenezes\FancyHttp\Attributes\Put;
 use ErickJMenezes\FancyHttp\Attributes\QueryParams;
-use Exception;
+use ErickJMenezes\FancyHttp\Attributes\Suppress;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\RequestOptions;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionAttribute;
@@ -56,9 +60,15 @@ class Client
         Delete::class => 'delete'
     ];
 
+    /**
+     * Client constructor.
+     *
+     * @param string  $interfaceClass
+     * @param string $baseUri
+     */
     public function __construct(
-        protected mixed $interfaceClass,
-        protected ?string $baseUri = null
+        protected string $interfaceClass,
+        protected string $baseUri
     )
     {
         try {
@@ -87,17 +97,18 @@ class Client
         $apiArgs = $this->apiAttribute->getArguments();
 
         $this->client = new GuzzleClient([
-            'base_uri' => $this->baseUri ?: $apiArgs['baseUri'] ?? $apiArgs[1] ?? '',
-            'headers' => $apiArgs['headers'] ?? $apiArgs[0] ?? []
+            'base_uri' => $this->baseUri,
+            RequestOptions::HEADERS => $apiArgs['headers'] ?? $apiArgs[0] ?? [],
+            RequestOptions::AUTH => $apiArgs['auth'] ?? $apiArgs[1] ?? null
         ]);
     }
 
     /**
-     * @param string      $interface
-     * @param string|null $baseUri
+     * @param string $interface
+     * @param string $baseUri
      * @return static
      */
-    public static function createFromInterface(string $interface, string $baseUri = null): static
+    public static function createFromInterface(string $interface, string $baseUri): static
     {
         return new static($interface, $baseUri);
     }
@@ -108,7 +119,7 @@ class Client
             $this->throwBadMethodCallException("The method {$name} is not declared in {$this->interfaceClass}.");
         }
 
-        if (empty($this->currentMethod) || $this->currentMethod->getName() !== $name) $this->loadState($name);
+        if (empty($this->currentMethod) || $this->currentMethod->getName() !== $name) $this->loadMethodState($name);
 
         $arguments = $this->assertMethodSignature($arguments);
 
@@ -132,7 +143,7 @@ class Client
         throw new BadMethodCallException($message);
     }
 
-    protected function loadState(string $name): void
+    protected function loadMethodState(string $name): void
     {
         $this->loadReflectionMethod($name);
         $this->loadVerbAttribute($name);
@@ -166,144 +177,6 @@ class Client
             }
         }
         $this->throwBadMethodCallException("The method {$method} does not have a required attribute");
-    }
-
-    protected function getHttpVerb(): string
-    {
-        return $this->verbMap[$this->currentMethodVerbAttribute->getName()];
-    }
-
-    protected function replacePathParams(array $params, string $path): string
-    {
-        $this->forEachParametersOfAttributeType(
-            PathParam::class,
-            function (ReflectionAttribute $attribute, ReflectionParameter $parameter, int|string $parameterIndex) use (&$path, $params) {
-                [$pathParamName] = $attribute->getArguments();
-                $pathParamValue = $params[$parameter->name] ?? $params[$parameterIndex];
-                $path = preg_replace('/{' . $pathParamName . '}/', $pathParamValue, $path);
-            }
-        );
-        return $path;
-    }
-
-    /**
-     * Iterates through parameters of a given attribute class type.
-     *
-     * @param string   $attributeClass
-     * @param \Closure $closure
-     * @return $this
-     */
-    protected function forEachParametersOfAttributeType(string $attributeClass, Closure $closure): static
-    {
-        foreach ($this->currentMethod->getParameters() as $reflectionParameterKey => $reflectionParameter) {
-            $reflectionAttributes = $reflectionParameter->getAttributes($attributeClass);
-            foreach ($reflectionAttributes as $reflectionAttributeKey => $reflectionAttribute) {
-                $closure($reflectionAttribute, $reflectionParameter, $reflectionParameterKey);
-            }
-        }
-        return $this;
-    }
-
-    protected function getPath(): string
-    {
-        [$path] = $this->currentMethodVerbAttribute->getArguments();
-        return $path;
-    }
-
-    /**
-     * @param mixed $arguments
-     * @return array
-     */
-    protected function getRequestOptions(array $arguments): array
-    {
-        [$bodyType, $bodyContents] = $this->getRequestBody($arguments);
-
-        return array_filter([
-            'headers' => $this->getHeaderParams($arguments) + $this->getRequestHeaders(),
-            $bodyType => $bodyContents,
-            'query' => $this->getQueryParams($arguments)
-        ]);
-    }
-
-    protected function getRequestBody(array $arguments): array
-    {
-        $body = ['body', null];
-
-        $this->forEachParametersOfAttributeType(
-            Body::class,
-            function (ReflectionAttribute $attribute, ReflectionParameter $parameter, $parameterIndex) use ($arguments, &$body) {
-                [$type] = $attribute->getArguments();
-                $typeName = 'body';
-                if ($type === Body::TYPE_JSON) $typeName = 'json';
-                $body = [$typeName, $arguments[$parameterIndex]];
-            }
-        );
-
-        return $body;
-    }
-
-    protected function getHeaderParams(array $arguments): array
-    {
-        $headers = [];
-
-        $this->forEachParametersOfAttributeType(
-            HeaderParam::class,
-            function (ReflectionAttribute $attribute, ReflectionParameter $parameter, $paramIndex) use ($arguments, &$headers) {
-                [$headerName] = $attribute->getArguments();
-                $headers[$headerName] = $arguments[$parameter->name] ?? $arguments[$paramIndex];
-            }
-        );
-
-        return $headers;
-    }
-
-    protected function getRequestHeaders(): array
-    {
-        $arguments = $this->currentMethodVerbAttribute->getArguments();
-        return ($arguments['headers'] ?? $arguments[1] ?? []);
-    }
-
-    protected function getQueryParams(array $params): array
-    {
-        $query = [];
-
-        $this->forEachParametersOfAttributeType(
-            QueryParams::class,
-            function (ReflectionAttribute $attribute, ReflectionParameter $parameter, $paramIndex) use ($params, &$query) {
-                $query = $query + ($params[$parameter->name] ?? $params[$paramIndex]);
-            }
-        );
-
-        return $query;
-    }
-
-    /**
-     * @return string
-     */
-    protected function getCurrentMethodReturnType(): string
-    {
-        return $this->currentMethod->hasReturnType() ?
-            $this->currentMethod->getReturnType()->getName() :
-            'mixed';
-    }
-
-    /**
-     * @param string                              $returnType
-     * @param \Psr\Http\Message\ResponseInterface $response
-     * @return mixed
-     */
-    protected function castResponseToMethodReturnType(string $returnType, ResponseInterface $response): mixed
-    {
-        $stringResponse = $response->getBody()->getContents();
-
-        return match ($returnType) {
-            'array' => json_decode($stringResponse ?: '{}', true),
-            'void', 'null' => null,
-            'bool' => true,
-            'string' => $stringResponse,
-            'object' => json_decode($stringResponse ?: '{}'),
-            default => $response
-        };
     }
 
     /**
@@ -357,5 +230,182 @@ class Client
         }
 
         return $args;
+    }
+
+    protected function getHttpVerb(): string
+    {
+        return $this->verbMap[$this->currentMethodVerbAttribute->getName()];
+    }
+
+    protected function replacePathParams(array $arguments, string $path): string
+    {
+        $this->forEachParametersOfAttributeType(
+            PathParam::class,
+            function (ReflectionAttribute $attr, ReflectionParameter $param, int|string $index) use (&$path, $arguments) {
+                [$pathParamName] = $attr->getArguments();
+                $pathParamValue = $arguments[$param->name] ?? $arguments[$index];
+                $path = preg_replace('/{' . $pathParamName . '}/', $pathParamValue, $path);
+            }
+        );
+        return $path;
+    }
+
+    /**
+     * Iterates through parameters of a given attribute class type.
+     *
+     * @param string   $attributeClass
+     * @param \Closure $closure
+     * @return $this
+     */
+    protected function forEachParametersOfAttributeType(string $attributeClass, Closure $closure, string $callType = 'all'): static
+    {
+        foreach ($this->currentMethod->getParameters() as $reflectionParameterKey => $reflectionParameter) {
+            $reflectionAttributes = $reflectionParameter->getAttributes($attributeClass);
+            foreach ($reflectionAttributes as $reflectionAttributeKey => $reflectionAttribute) {
+                $closure($reflectionAttribute, $reflectionParameter, $reflectionParameterKey);
+            }
+        }
+        return $this;
+    }
+
+    protected function getPath(): string
+    {
+        [$path] = $this->currentMethodVerbAttribute->getArguments();
+        return $path;
+    }
+
+    /**
+     * @param mixed $arguments
+     * @return array
+     */
+    protected function getRequestOptions(array $arguments): array
+    {
+        [$bodyType, $bodyContents] = $this->getRequestBody($arguments);
+
+        return array_filter([
+                RequestOptions::HEADERS => $this->getHeaderParams($arguments) + $this->getRequestHeaders(),
+                $bodyType => $bodyContents,
+                RequestOptions::QUERY => $this->getQueryParams($arguments),
+                RequestOptions::FORM_PARAMS => $this->getFormParams($arguments),
+                RequestOptions::MULTIPART => $this->getMultipartFormData($arguments),
+                RequestOptions::VERSION => $this->getHttpProtocolVersion()
+            ]) + [
+                RequestOptions::HTTP_ERRORS => !$this->isSuppressed()
+            ];
+    }
+
+    protected function getRequestBody(array $arguments): array
+    {
+        $body = [RequestOptions::BODY, null];
+
+        $this->forEachParametersOfAttributeType(
+            Body::class,
+            function (ReflectionAttribute $attr, $param, $index) use ($arguments, &$body) {
+                [$type] = $attr->getArguments();
+                $body = [$type, $arguments[$index]];
+            }
+        );
+
+        return $body;
+    }
+
+    protected function getHeaderParams(array $arguments): array
+    {
+        $headers = [];
+
+        $this->forEachParametersOfAttributeType(
+            HeaderParam::class,
+            function (ReflectionAttribute $attr, ReflectionParameter $param, $index) use ($arguments, &$headers) {
+                [$headerName] = $attr->getArguments();
+                $headers[$headerName] = $arguments[$param->name] ?? $arguments[$index];
+            }
+        );
+
+        return $headers;
+    }
+
+    protected function getRequestHeaders(): array
+    {
+        $arguments = $this->currentMethodVerbAttribute->getArguments();
+        return ($arguments['headers'] ?? $arguments[1] ?? []);
+    }
+
+    protected function getQueryParams(array $arguments): array
+    {
+        $query = [];
+
+        $this->forEachParametersOfAttributeType(
+            QueryParams::class,
+            function ($attr, ReflectionParameter $param, $index) use ($arguments, &$query) {
+                $query = $query + ($arguments[$param->name] ?? $arguments[$index]);
+            }
+        );
+
+        return $query;
+    }
+
+    protected function getFormParams(array $arguments): array
+    {
+        $formParams = [];
+        $this->forEachParametersOfAttributeType(
+            FormParams::class,
+            function ($attr, $param, $index) use ($arguments, &$formParam) {
+                $formParam += $arguments[$index];
+            }
+        );
+        return $formParams;
+    }
+
+    protected function getMultipartFormData(array $arguments): ?array
+    {
+        $multipart = null;
+        $this->forEachParametersOfAttributeType(
+            Multipart::class,
+            function ($attr, $param, $index) use ($arguments, &$multipart) {
+                $multipart = $arguments[$index];
+            }
+        );
+        return $multipart;
+    }
+
+    protected function getHttpProtocolVersion(): ?string
+    {
+        [$attr] = $this->currentMethod->getAttributes(HttpVersion::class) + [null];
+        if (is_null($attr)) return null;
+        return $attr->getArguments()[0];
+    }
+
+    protected function isSuppressed(): bool
+    {
+        return count($this->currentMethod->getAttributes(Suppress::class)) > 0;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getCurrentMethodReturnType(): string
+    {
+        return $this->currentMethod->hasReturnType() ?
+            $this->currentMethod->getReturnType()->getName() :
+            'mixed';
+    }
+
+    /**
+     * @param string                              $returnType
+     * @param \Psr\Http\Message\ResponseInterface $response
+     * @return mixed
+     */
+    protected function castResponseToMethodReturnType(string $returnType, ResponseInterface $response): mixed
+    {
+        $stringResponse = $response->getBody()->getContents();
+
+        return match ($returnType) {
+            'array' => json_decode($stringResponse ?: '{}', true),
+            'void', 'null' => null,
+            'bool' => true,
+            'string' => $stringResponse,
+            'object' => json_decode($stringResponse ?: '{}'),
+            default => $response
+        };
     }
 }

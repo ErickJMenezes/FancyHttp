@@ -19,7 +19,7 @@ class CastingTypesTest extends TestCase
      */
     public function testCreatingInstance(): Client
     {
-        $instance = Client::createFromInterface(TestCaseClient::class);
+        $instance = Client::createFromInterface(TestCaseClient::class,  'https://jsonplaceholder.typicode.com/');
         $this->assertTrue((bool)$instance, 'instance not created');
         return $instance;
     }

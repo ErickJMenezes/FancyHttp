@@ -12,10 +12,11 @@ use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Post;
 use ErickJMenezes\FancyHttp\Attributes\Put;
 use ErickJMenezes\FancyHttp\Attributes\QueryParams;
+use ErickJMenezes\FancyHttp\Attributes\Suppress;
 use Psr\Http\Message\ResponseInterface;
 
 
-#[Api(baseUri: 'https://jsonplaceholder.typicode.com/')]
+#[Api]
 interface TestCaseClient
 {
     #[Get('todos')]
@@ -27,19 +28,23 @@ interface TestCaseClient
     #[Get('todos/{id}')]
     public function getTodoByIdStringableParam(#[PathParam('id')] \Stringable $id): bool;
 
+    #[Get('todos/{id}')]
+    #[Suppress]
+    public function getTodoByIdSuppressed(#[PathParam('id')] int $id): ResponseInterface;
+
     #[Post('todos')]
-    public function createTodo(#[Body(Body::TYPE_JSON)] array $body): array;
+    public function createTodo(#[Body(Body::JSON)] array $body): array;
 
     #[Patch('todos/{id}')]
     public function updateTodo(
         #[PathParam('id')] int $id,
-        #[Body(Body::TYPE_JSON)] array $body
+        #[Body(Body::JSON)] array $body
     ): array;
 
     #[Put('todos/{id}')]
     public function replaceTodo(
         #[PathParam('id')] int $id,
-        #[Body(Body::TYPE_JSON)] array $body
+        #[Body(Body::JSON)] array $body
     ): array;
 
     #[Delete('todos/{id}')]

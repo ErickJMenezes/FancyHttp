@@ -2,14 +2,16 @@
 
 namespace ErickJMenezes\FancyHttp\Attributes;
 
+use GuzzleHttp\RequestOptions;
+
 #[\Attribute(\Attribute::TARGET_PARAMETER)]
 class Body
 {
-    public const TYPE_RAW = 0;
-    public const TYPE_JSON = 1;
+    public const BODY = RequestOptions::BODY;
+    public const JSON = RequestOptions::JSON;
 
     public function __construct(
-        public int $type = self::TYPE_RAW
+        public string $type = self::BODY
     )
     {
     }

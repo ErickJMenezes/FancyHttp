@@ -16,6 +16,6 @@ class InterfaceTest extends TestCase
     public function testTryToCreateAClientWithoutApiAttribute()
     {
         $this->expectException(InvalidArgumentException::class);
-        Client::createFromInterface(InterfaceWithoutApiAttribute::class);
+        Client::createFromInterface(InterfaceWithoutApiAttribute::class,  'https://jsonplaceholder.typicode.com/');
     }
 }
