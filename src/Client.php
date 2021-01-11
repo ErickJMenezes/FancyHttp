@@ -257,7 +257,7 @@ class Client
      * @param \Closure $closure
      * @return $this
      */
-    protected function forEachParametersOfAttributeType(string $attributeClass, Closure $closure, string $callType = 'all'): static
+    protected function forEachParametersOfAttributeType(string $attributeClass, Closure $closure): static
     {
         foreach ($this->currentMethod->getParameters() as $reflectionParameterKey => $reflectionParameter) {
             $reflectionAttributes = $reflectionParameter->getAttributes($attributeClass);
