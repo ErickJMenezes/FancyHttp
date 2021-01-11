@@ -74,7 +74,7 @@ class Client
         try {
             $this->interface = new ReflectionClass($interfaceClass);
             if (!$this->interface->isInterface()) {
-                $this->throwInvalidArgumentException("The first argument must be a YourClientInterface::class.");
+                $this->throwInvalidArgumentException("The first argument must be YourClientInterface::class.");
             }
             $apiAttributes = $this->interface->getAttributes(Api::class);
             if (count($apiAttributes) === 0) {
