@@ -78,4 +78,7 @@ interface TestCaseClient
 
     #[Get('todos/{id}')]
     public function getTodoByIdNone(#[PathParam('id')] int $id);
+
+    #[Get('todos/{id}')]
+    public function getTodoByIdCastable(#[PathParam('id')] int $id): CastableForTesting;
 }

@@ -3,6 +3,7 @@
 use PHPUnit\Framework\TestCase;
 use ErickJMenezes\FancyHttp\Client;
 use Psr\Http\Message\ResponseInterface;
+use Tests\Clients\CastableForTesting;
 use Tests\Clients\TestCaseClient;
 
 
@@ -102,5 +103,15 @@ class CastingTypesTest extends TestCase
     {
         $response = $client->getTodoByIdNone(1);
         $this->assertTrue($response instanceof ResponseInterface, 'Response is not ResponseInterface (none)');
+    }
+
+    /**
+     * @param Client $client
+     * @depends testCreatingInstance
+     */
+    public function testCastable(Client $client)
+    {
+        $response = $client->getTodoByIdCastable(1);
+        $this->assertTrue($response instanceof CastableForTesting, 'Response is not CastableForTesting (castable)');
     }
 }

@@ -13,5 +13,5 @@ use Psr\Http\Message\ResponseInterface;
  */
 interface Castable
 {
-    public static function castResponse(ResponseInterface $response): mixed;
+    public static function castResponse(ResponseInterface $response): static;
 }

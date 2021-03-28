@@ -35,6 +35,7 @@ class Method
     protected \ReflectionMethod $method;
     protected MethodArguments $arguments;
     protected \ReflectionAttribute $verb;
+    protected string $returnType;
     // Request Arguments
     protected string $path;
     protected array $headers;
@@ -56,6 +57,7 @@ class Method
     {
         $this->method = $this->interface->getMethod($name);
         $this->arguments = new MethodArguments($this->method->getParameters(), $arguments);
+        $this->returnType = $this->method->hasReturnType() ? $this->method->getReturnType()->getName() : 'mixed';
         $this->loadVerb();
         $this->loadVerbArguments();
         $this->loadOptions();
@@ -133,19 +135,13 @@ class Method
         return !empty($this->method->getAttributes(Suppress::class));
     }
 
-    public function getReturnType(): string
-    {
-        return $this->method->hasReturnType() ? $this->method->getReturnType() : 'mixed';
-    }
-
     protected function castResponse(ResponseInterface $response): mixed
     {
-        $returnType = $this->getReturnType();
-        if (class_exists($returnType) && class_implements($returnType))
-            return $returnType::castResponse($response);
+        if ($this->isReturnTypeCastable())
+            return $this->returnType::castResponse($response);
 
         $stringResponse = $response->getBody()->getContents();
-        return match ($returnType) {
+        return match ($this->returnType) {
             'array' => json_decode($stringResponse ?: '{}', true),
             'void', 'null' => null,
             'bool' => true,
@@ -156,5 +152,14 @@ class Method
             ),
             default => $response
         };
+    }
+
+    public function isReturnTypeCastable(): bool
+    {
+        return class_exists($this->returnType) &&
+            !empty(array_filter(
+                class_implements($this->returnType),
+                fn ($interface) => $interface === Castable::class
+            ));
     }
 }
