@@ -2,11 +2,9 @@
 
 namespace Tests\Clients;
 
-use ErickJMenezes\FancyHttp\Attributes\Api;
 use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\Delete;
 use ErickJMenezes\FancyHttp\Attributes\Get;
-use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
 use ErickJMenezes\FancyHttp\Attributes\Patch;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Post;
@@ -16,7 +14,6 @@ use ErickJMenezes\FancyHttp\Attributes\Suppress;
 use Psr\Http\Message\ResponseInterface;
 
 
-#[Api]
 interface TestCaseClient
 {
     #[Get('todos')]

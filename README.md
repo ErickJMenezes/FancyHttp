@@ -1,44 +1,54 @@
 # Fancy HTTP
-#### Just declare the client interface, and you are ready to use it! 
+#### Just declare the client interface and you are ready to use it! 
 
 Look the example down below:
 ~~~php
-use ErickJMenezes\FancyHttp\Attributes\Api;
 use ErickJMenezes\FancyHttp\Attributes\Get;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Client;
 
 /**
- * To-do list microservice interface
- */
-#[Api] // Api attribute
-interface MyClient {
+* Interface TodosClient
+ * 
+* @author ErickJMenezes <erickmenezes.dev@gmail.com>
+*/
+interface TodosClient {
 
     /**
-    * @param int $id The id will be used to replace the path parameter "id".
-    * @return array The Response will be automatically casted to the type
-    *               declared in the method's signature.
+    * @param int $id The path parameter.
+    * @return \ArrayObject The response will be automatically casted to "ArrayObject"
     */
     #[Get('todos/{id}')] // The endpoint
-    public function getTodoById(#[PathParam('id')] int $id): array;
+    public function getTodoById(#[PathParam('id')] int $id): \ArrayObject;
+    
+    /**
+    * @return array The response will be automatically casted to "array"
+    */
+    #[Get('todos')]
+    public function getTodos(): array;
 }
 
 // The Client class accepts two parameters, the first is a
 // fully qualified interface name and the second is the base uri.
-$myClient = Client::createFromInterface(MyClient::class, 'http://localhost:9000/api/');
+$todoClient = Client::createFromInterface(TodosClient::class, 'http://api.yourdomain.etc/');
 
 // Now we have everything we need to use our client.
-// Call the method declared in MyClient.
-$todo = $myClient->getTodoById(1);
+// Call the method declared in TodosClient.
+$todo = $todoClient->getTodoById(1);
 
 // Do something with the response...
-printf($todo['title']);
+printf($todo->title);
 ~~~
 It's simple as that!
 
 ## How to install?
 ~~~shell
 $ composer require erickjmenezes/fancyhttp
+~~~
+
+## How to test?
+~~~shell
+$ php8.0 vendor/bin/phpunit
 ~~~
 
 ## Documentation

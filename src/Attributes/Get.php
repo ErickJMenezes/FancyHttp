@@ -6,8 +6,10 @@ namespace ErickJMenezes\FancyHttp\Attributes;
 #[\Attribute(\Attribute::TARGET_METHOD)]
 class Get
 {
+    public const METHOD = 'get';
+
     public function __construct(
-        public string $path,
+        public string $path = '',
         public array $headers = []
     )
     {
