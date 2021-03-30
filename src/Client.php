@@ -5,7 +5,7 @@ namespace ErickJMenezes\FancyHttp;
 
 
 use BadMethodCallException;
-use ErickJMenezes\FancyHttp\Utils\ClassGenerator;
+use ErickJMenezes\FancyHttp\Utils\Implementer;
 use ErickJMenezes\FancyHttp\Utils\Method;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
@@ -52,7 +52,6 @@ class Client
     }
 
     /**
-     * @template T
      * @param class-string<T> $interface
      * @param string          $baseUri
      * @return T
@@ -69,8 +68,8 @@ class Client
      */
     private function generate()
     {
-        $codeGenerator = new ClassGenerator($this->interface);
-        return $codeGenerator->make($this);
+        $implementer = new Implementer($this->interface);
+        return $implementer->make($this);
     }
 
     public function __call(string $name, array $arguments)

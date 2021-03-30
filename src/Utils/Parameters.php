@@ -4,9 +4,7 @@
 namespace ErickJMenezes\FancyHttp\Utils;
 
 
-use ErickJMenezes\FancyHttp\Attributes\QueryParams;
-
-class MethodArguments
+class Parameters
 {
     protected array $argsNameMap;
     protected array $argsPositionMap;
@@ -14,12 +12,12 @@ class MethodArguments
     /**
      * MethodArguments constructor.
      *
-     * @param \ReflectionParameter[] $parameters
-     * @param array                  $givenParameters
+     * @param \ReflectionParameter[] $reflectionParameters
+     * @param array                  $arguments
      */
     public function __construct(
-        protected array $parameters,
-        protected array $givenParameters
+        protected array $reflectionParameters,
+        protected array $arguments
     )
     {
         $this->loadParameters();
@@ -27,29 +25,21 @@ class MethodArguments
 
     private function loadParameters(): void
     {
-        foreach ($this->parameters as $parameter) {
+        foreach ($this->reflectionParameters as $parameter) {
             $this->argsNameMap[$parameter->getName()] =
-                $this->argsPositionMap[$parameter->getPosition()] =
-                    // Load by name or by position
-                    $this->givenParameters[$parameter->getName()] ??
-                    $this->givenParameters[$parameter->getPosition()] ??
-                    // If the parameter is not available by name or by position
-                    // we will try to get the default value. If the default value is not available,
-                    // we will throw an exception.
-                    (
-                        $parameter->isDefaultValueAvailable()
-                            ? $parameter->getDefaultValue() :
-                            throw new \InvalidArgumentException("Required argument {$parameter->name} is missing.")
-                    );
+            $this->argsPositionMap[$parameter->getPosition()] =
+                // Load by name or by position
+                $this->arguments[$parameter->getName()] ??
+                $this->arguments[$parameter->getPosition()] ??
+                // If the parameter is not available by name or by position
+                // we will try to get the default value. If the default value is not available,
+                // we will throw an exception.
+                (
+                $parameter->isDefaultValueAvailable()
+                    ? $parameter->getDefaultValue() :
+                    throw new \InvalidArgumentException("Required argument {$parameter->name} is missing.")
+                );
         }
-    }
-
-    public function getByName(string $name): mixed
-    {
-        if (isset($this->argsNameMap[$name])) {
-            return $this->argsNameMap[$name];
-        }
-        throw new \InvalidArgumentException("The argument name \"{$name}\" is invalid.");
     }
 
     public function getByIndex(int $index): mixed
@@ -70,6 +60,12 @@ class MethodArguments
         return $this->argsPositionMap;
     }
 
+    public function forEachOfAttribute(string $attribute, callable $callback): void
+    {
+        foreach ($this->getByAttribute($attribute) as $name => $value)
+            $callback($value, $name);
+    }
+
     /**
      * @param string $attribute
      * @return \ArrayObject[]
@@ -78,7 +74,7 @@ class MethodArguments
     {
         // First, we'll filter the parameters with the given attribute
         $params = array_filter(
-            $this->parameters,
+            $this->reflectionParameters,
             fn(\ReflectionParameter $param) => !empty($param->getAttributes($attribute))
         );
         // Then we just create a new dictionary with the real parameter values.
@@ -94,20 +90,26 @@ class MethodArguments
         return $paramList;
     }
 
-    public function forEachOfAttribute(string $attribute, callable $callback): void
+    public function getByName(string $name): mixed
     {
-        foreach ($this->getByAttribute($attribute) as $name => $value)
-            $callback($value, $name);
+        if (isset($this->argsNameMap[$name])) {
+            return $this->argsNameMap[$name];
+        }
+        throw new \InvalidArgumentException("The argument name \"{$name}\" is invalid.");
     }
 
-    public function getFirstByAttribute(string $attribute, $fallbackValue = null, bool $full = false): mixed
+    public function getFirstValueByAttribute(string $attribute, $fallbackValue = null): mixed
+    {
+        return $this->getFirstByAttribute($attribute)->value ?? $fallbackValue;
+    }
+
+    public function getFirstByAttribute(string $attribute): ?\ArrayObject
     {
         $value = $this->getByAttribute($attribute);
         if (!empty($value)) {
             $keyFirst = array_key_first($value);
-            return $full ? $value[$keyFirst] : $value[$keyFirst]->value;
+            return $value[$keyFirst] ?? null;
         }
-        elseif (is_callable($fallbackValue)) return $fallbackValue();
-        return $fallbackValue;
+        return null;
     }
 }
