@@ -3,6 +3,7 @@
 
 namespace ErickJMenezes\FancyHttp\Utils;
 
+use ErickJMenezes\FancyHttp\Attributes\ReturnsMappedList;
 use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\Delete;
 use ErickJMenezes\FancyHttp\Attributes\FormParams;
@@ -10,6 +11,7 @@ use ErickJMenezes\FancyHttp\Attributes\Get;
 use ErickJMenezes\FancyHttp\Attributes\Head;
 use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
 use ErickJMenezes\FancyHttp\Attributes\HttpVersion;
+use ErickJMenezes\FancyHttp\Attributes\AutoMapped;
 use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\Patch;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
@@ -44,9 +46,9 @@ class Method
     /**
      * Method constructor.
      *
-     * @param \ReflectionClass                               $interface
-     * @param string                                         $name
-     * @param \ErickJMenezes\FancyHttp\Utils\MethodArguments $arguments
+     * @param \ReflectionClass $interface
+     * @param string           $name
+     * @param array            $arguments
      * @throws \ReflectionException
      */
     public function __construct(
@@ -139,6 +141,15 @@ class Method
     {
         if ($this->isReturnTypeCastable())
             return $this->returnType::castResponse($response);
+        elseif ($modelInterface = $this->isReturnTypeAutoMapped($this->returnType)) {
+            return InterfaceProxy::make($modelInterface, json_decode($response->getBody()->getContents(), true));
+        } elseif ($modelInterface = $this->methodReturnsAutoMappedList()) {
+            $data = [];
+            foreach (json_decode($response->getBody()->getContents(), true) as $info) {
+                $data[] = InterfaceProxy::make($modelInterface, $info);
+            }
+            return $this->returnType === \ArrayObject::class ? new \ArrayObject($data) : $data;
+        }
 
         $stringResponse = $response->getBody()->getContents();
         return match ($this->returnType) {
@@ -161,5 +172,33 @@ class Method
                 class_implements($this->returnType),
                 fn ($interface) => $interface === Castable::class
             ));
+    }
+
+    protected function isReturnTypeAutoMapped($returnType): false|\ReflectionClass
+    {
+        try {
+            if (interface_exists($returnType)) {
+                $reflection = new \ReflectionClass($this->returnType);
+                if(isset($reflection->getAttributes(AutoMapped::class)[0]))
+                    return $reflection;
+            }
+        } catch (\Throwable) {}
+        return false;
+    }
+
+    protected function methodReturnsAutoMappedList(): \ReflectionClass|false
+    {
+        if ($attribute = $this->method->getAttributes(ReturnsMappedList::class)[0] ?? false) {
+            $arg = $attribute->getArguments()[0];
+            try {
+                if (interface_exists($arg)) {
+                    $reflection = new \ReflectionClass($arg);
+                    if(isset($reflection->getAttributes(AutoMapped::class)[0]))
+                        return $reflection;
+                }
+            } catch (\Throwable) {}
+        }
+
+        return false;
     }
 }

@@ -56,6 +56,7 @@ class Client
      * @param class-string<T> $interface
      * @param string          $baseUri
      * @return T
+     * @throws \ReflectionException
      */
     public static function createFromInterface(string $interface, string $baseUri)
     {
@@ -64,6 +65,7 @@ class Client
 
     /**
      * @return T
+     * @throws \ReflectionException
      */
     private function generate()
     {
