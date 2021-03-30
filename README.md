@@ -30,6 +30,8 @@ interface TodosClient {
 
 // The Client class accepts two parameters, the first is a
 // fully qualified interface name and the second is the base uri.
+// The Client class will create a real instance of TodosClient, you can
+// safely assign to a typed parameter.
 $todoClient = Client::createFromInterface(TodosClient::class, 'http://api.yourdomain.etc/');
 
 // Now we have everything we need to use our client.

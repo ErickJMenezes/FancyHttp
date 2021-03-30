@@ -13,21 +13,18 @@ use Tests\Clients\TestCaseClient;
  */
 class SimpleCrudTest extends TestCase
 {
-    /**
-     * @return \ErickJMenezes\FancyHttp\Client
-     */
-    public function testCreatingInstance()
+    public function testCreatingInstance(): TestCaseClient
     {
         $instance = Client::createFromInterface(TestCaseClient::class, 'https://jsonplaceholder.typicode.com/');
-        $this->assertTrue((bool)$instance, 'instance not created');
+        $this->assertTrue($instance instanceof TestCaseClient, 'instance not created');
         return $instance;
     }
 
     /**
-     * @param \ErickJMenezes\FancyHttp\Client $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
-    public function testGetTodos(Client $client)
+    public function testGetTodos(TestCaseClient $client)
     {
         $response = $client->getTodos();
         $this->assertIsArray($response, 'response is not array');
@@ -36,10 +33,10 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\FancyHttp\Client $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
-    public function testGetTodoById(Client $client)
+    public function testGetTodoById(TestCaseClient $client)
     {
         $response = $client->getTodoById(1);
         $this->assertIsArray($response, 'response is not array');
@@ -47,10 +44,10 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\FancyHttp\Client $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
-    public function testGetTodoByIdStringable(Client $client)
+    public function testGetTodoByIdStringable(TestCaseClient $client)
     {
         $response = $client->getTodoByIdStringableParam(new class implements \Stringable {
             public function __toString(): string
@@ -62,10 +59,10 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\FancyHttp\Client $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
-    public function testCreateTodo(Client $client)
+    public function testCreateTodo(TestCaseClient $client)
     {
         $response = $client->createTodo([
             'userId' => 1,
@@ -80,10 +77,10 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\FancyHttp\Client $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
-    public function testUpdateTodo(Client $client)
+    public function testUpdateTodo(TestCaseClient $client)
     {
         $response = $client->getTodoById(1);
         $this->assertIsArray($response, 'response is not array');
@@ -94,20 +91,20 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\FancyHttp\Client $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
-    public function testDeleteTodo(Client $client)
+    public function testDeleteTodo(TestCaseClient $client)
     {
         $response = $client->deleteTodo(1);
         self::assertTrue($response, 'Todo not deleted');
     }
 
     /**
-     * @param \ErickJMenezes\FancyHttp\Client $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
-    public function testFilterTodosWithQueryString(Client $client)
+    public function testFilterTodosWithQueryString(TestCaseClient $client)
     {
         $response = $client->getTodos(['id' => 1]);
         self::assertTrue(count($response) === 1, 'Response is not filtered');
@@ -116,10 +113,10 @@ class SimpleCrudTest extends TestCase
     }
 
     /**
-     * @param \ErickJMenezes\FancyHttp\Client $client
+     * @param \Tests\Clients\TestCaseClient $client
      * @depends testCreatingInstance
      */
-    public function testQueryParamPlusQueryStringParameters(Client $client)
+    public function testQueryParamPlusQueryStringParameters(TestCaseClient $client)
     {
         $response = $client->getUserTodos(1, ['id' => 3]);
         self::assertIsArray($response, 'Response must be a array');
@@ -130,9 +127,9 @@ class SimpleCrudTest extends TestCase
 
     /**
      * @depends testCreatingInstance
-     * @param \ErickJMenezes\FancyHttp\Client $client
+     * @param \Tests\Clients\TestCaseClient $client
      */
-    public function testSuppressedError(Client $client)
+    public function testSuppressedError(TestCaseClient $client)
     {
         $response = $client->getTodoByIdSuppressed(99999);
         self::assertTrue($response->getStatusCode() === 404);
