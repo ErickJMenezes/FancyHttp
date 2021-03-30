@@ -110,4 +110,26 @@ class CastingTypesTest extends TestCase
         $response = $client->getTodoByIdCastable(1);
         self::assertTrue(true, 'Something goes wrong');
     }
+
+    /**
+     * @param \Tests\Clients\TestCaseClient $client
+     * @depends testCreatingInstance
+     */
+    public function testModelInterface(TestCaseClient $client)
+    {
+        $todo = $client->getTodoByIdMapped(1);
+        $todo->setTitle('testing-auto-mapped');
+        self::assertTrue($todo->getTitle() === 'testing-auto-mapped', 'Something goes wrong');
+    }
+
+    /**
+     * @param \Tests\Clients\TestCaseClient $client
+     * @depends testCreatingInstance
+     */
+    public function testGetTodosMapped(TestCaseClient $client)
+    {
+        $todos = $client->getTodosMapped();
+        foreach ($todos as $todo)
+            self::assertTrue($todo instanceof \Tests\Clients\TodoInterface, 'Something goes wrong');
+    }
 }

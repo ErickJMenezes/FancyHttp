@@ -10,6 +10,7 @@ use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Post;
 use ErickJMenezes\FancyHttp\Attributes\Put;
 use ErickJMenezes\FancyHttp\Attributes\QueryParams;
+use ErickJMenezes\FancyHttp\Attributes\ReturnsMappedList;
 use ErickJMenezes\FancyHttp\Attributes\Suppress;
 use Psr\Http\Message\ResponseInterface;
 
@@ -81,4 +82,11 @@ interface TestCaseClient
 
     #[Get('todos/{id}')]
     public function getTodoByIdCastable(#[PathParam('id')] int $id): CastableForTesting;
+
+    #[Get('todos/{id}')]
+    public function getTodoByIdMapped(#[PathParam('id')] int $id): TodoInterface;
+
+    #[Get('todos')]
+    #[ReturnsMappedList(TodoInterface::class)]
+    public function getTodosMapped(): array;
 }
