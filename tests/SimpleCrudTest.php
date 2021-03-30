@@ -50,10 +50,7 @@ class SimpleCrudTest extends TestCase
     public function testGetTodoByIdStringable(TestCaseClient $client)
     {
         $response = $client->getTodoByIdStringableParam(new class implements \Stringable {
-            public function __toString(): string
-            {
-                return '1';
-            }
+            public function __toString(): string {return '1';}
         });
         self::assertTrue($response);
     }
