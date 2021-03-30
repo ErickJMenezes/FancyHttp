@@ -10,7 +10,6 @@ use ErickJMenezes\FancyHttp\Attributes\FormParams;
 use ErickJMenezes\FancyHttp\Attributes\Get;
 use ErickJMenezes\FancyHttp\Attributes\Head;
 use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
-use ErickJMenezes\FancyHttp\Attributes\HttpVersion;
 use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\Patch;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
@@ -142,7 +141,7 @@ class Method
         $decodedResponse = fn() => json_decode($response->getBody()->getContents(), true);
         if ($this->isReturnTypeCastable())
             return $this->returnType::castResponse($response);
-        elseif ($modelInterface = $this->isReturnTypeAutoMapped($this->returnType)) {
+        elseif ($modelInterface = $this->isReturnTypeAutoMapped()) {
             return SimpleInterfaceProxy::make($modelInterface, $decodedResponse());
         } elseif ($modelInterface = $this->methodReturnsAutoMappedList()) {
             $data = SimpleInterfaceProxy::makeMany($modelInterface, $decodedResponse());
@@ -170,10 +169,10 @@ class Method
             ));
     }
 
-    protected function isReturnTypeAutoMapped($returnType): false|\ReflectionClass
+    protected function isReturnTypeAutoMapped(): false|\ReflectionClass
     {
         try {
-            if (interface_exists($returnType)) {
+            if (interface_exists($this->returnType)) {
                 $reflection = new \ReflectionClass($this->returnType);
                 if (isset($reflection->getAttributes(AutoMapped::class)[0]))
                     return $reflection;
