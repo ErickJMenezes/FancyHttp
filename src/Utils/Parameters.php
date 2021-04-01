@@ -82,8 +82,6 @@ class Parameters
         foreach ($params as $param) {
             $paramList[$param->getName()] = new \ArrayObject([
                 'value' => $this->getByName($param->getName()),
-                'name' => $param->getName(),
-                'index' => $param->getPosition(),
                 'attrArgs' => $param->getAttributes($attribute)[0]->getArguments()
             ], \ArrayObject::ARRAY_AS_PROPS);
         }

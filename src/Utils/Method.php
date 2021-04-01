@@ -10,7 +10,6 @@ use ErickJMenezes\FancyHttp\Attributes\FormParams;
 use ErickJMenezes\FancyHttp\Attributes\Get;
 use ErickJMenezes\FancyHttp\Attributes\Head;
 use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
-use ErickJMenezes\FancyHttp\Attributes\HttpVersion;
 use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\Patch;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
@@ -43,6 +42,7 @@ class Method
     protected string $path;
     protected array $headers;
     protected array $options;
+    public ResponseInterface $lastResponse;
 
     /**
      * Method constructor.
@@ -82,12 +82,17 @@ class Method
     {
         [$path, $headers] = $this->verb->getArguments() + ['', []];
         $this->headers = $headers;
-
-        $pathMatches = [];
-        preg_match_all('/{(\w+)}/', $path, $pathMatches);
         $pathParameters = $this->arguments->getByAttribute(PathParam::class);
-        foreach ($pathMatches[1] ?? [] as $pathArgName) {
-            $path = str_replace('{' . $pathArgName . '}', $pathParameters[$pathArgName]->value, $path);
+        foreach ($pathParameters as $parameterName => $pathParameter) {
+            $value = $pathParameter->value;
+            $pathPlaceholder = $pathParameter->attrArgs[0];
+            $count = 0;
+            $path = str_replace('{'.$pathPlaceholder.'}', $value, $path, $count);
+            if ($count > 1) {
+                throw new \Exception("The path parameter \"{$pathPlaceholder}\" is repeated.");
+            } elseif ($count === 0) {
+                throw new \Exception("The argument \"{$parameterName}\" is not used by any path parameter.");
+            }
         }
         $this->path = $path;
     }
@@ -130,7 +135,7 @@ class Method
 
     public function call(ClientInterface $client): mixed
     {
-        return $this->castResponse($client->request(
+        return $this->castResponse($this->lastResponse = $client->request(
             $this->verb->getName()::METHOD,
             $this->path,
             $this->options
@@ -142,10 +147,10 @@ class Method
         $decodedResponse = fn() => json_decode($response->getBody()->getContents(), true);
         if ($this->isReturnTypeCastable())
             return $this->returnType::castResponse($response);
-        elseif ($modelInterface = $this->isReturnTypeAutoMapped($this->returnType)) {
-            return SimpleInterfaceProxy::make($modelInterface, $decodedResponse());
+        elseif ($modelInterface = $this->isReturnTypeAutoMapped()) {
+            return AMProxy::make($modelInterface, $decodedResponse());
         } elseif ($modelInterface = $this->methodReturnsAutoMappedList()) {
-            $data = SimpleInterfaceProxy::makeMany($modelInterface, $decodedResponse());
+            $data = AMProxy::makeMany($modelInterface, $decodedResponse());
             return $this->returnType === \ArrayObject::class ? new \ArrayObject($data) : $data;
         }
 
@@ -170,10 +175,10 @@ class Method
             ));
     }
 
-    protected function isReturnTypeAutoMapped($returnType): false|\ReflectionClass
+    protected function isReturnTypeAutoMapped(): false|\ReflectionClass
     {
         try {
-            if (interface_exists($returnType)) {
+            if (interface_exists($this->returnType)) {
                 $reflection = new \ReflectionClass($this->returnType);
                 if (isset($reflection->getAttributes(AutoMapped::class)[0]))
                     return $reflection;
