@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 
 
+namespace Tests;
+
 use ErickJMenezes\FancyHttp\Client;
 use PHPUnit\Framework\TestCase;
 use Tests\Clients\TestCaseClient;

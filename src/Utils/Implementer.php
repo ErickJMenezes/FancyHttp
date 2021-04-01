@@ -19,7 +19,6 @@ class Implementer
      * ClassGenerator constructor.
      *
      * @param \ReflectionClass<T> $interface
-     * @throws \ReflectionException
      */
     public function __construct(protected \ReflectionClass $interface)
     {
@@ -40,6 +39,8 @@ class Implementer
         $this->factory = eval(sprintf('return function ($parent) {
             return new class ($parent) implements %s {
                 public function __construct(protected $parent) {}
+                public function __get(string $name) {return $this->parent->$name;}
+                public function __set(string $name, $value) {$this->parent->$name = $value;}
                 protected function callParent($method, $arguments) {return $this->parent->{$method}(...$arguments);}
                 %s
             };
@@ -60,15 +61,17 @@ class Implementer
         $methods = [];
         foreach ($this->interface->getMethods() as $method) {
             if ($method->isStatic()) {
-                throw new \Exception("Static methods are not allowed in client interface.");
+                throw new \Exception("Static methods are not allowed, please remove the method \"{$method->getName()}\".");
             }
             $parameterList = [];
             foreach ($method->getParameters() as $parameter) {
+                if ($parameter->isVariadic() || $parameter->isPassedByReference()) {
+                    throw new \Exception("Variadic or passed by reference parameters are forbidden. Please fix the method \"{$method->getName()}\".");
+                }
                 $paramType = $this->getParameterType($parameter);
                 $argName = $parameter->getName();
-                $variadic = $parameter->isVariadic() ? '...' : '';
                 $defaultValue = $this->getParameterDefaultValue($parameter);
-                $parameterList[] = "{$paramType} {$variadic}\${$argName}{$defaultValue}";
+                $parameterList[] = "{$paramType} \${$argName}{$defaultValue}";
             }
             $parameterList = join(',', $parameterList);
             $returnTypeName = $method->hasReturnType() ? $this->getTypeName($method->getReturnType()) : '';

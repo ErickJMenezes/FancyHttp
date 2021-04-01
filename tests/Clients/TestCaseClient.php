@@ -89,4 +89,10 @@ interface TestCaseClient
     #[Get('todos')]
     #[ReturnsMappedList(TodoInterface::class)]
     public function getTodosMapped(): array;
+
+    #[Get('todos/{id1}/tests/{id2}')]
+    public function testMultiplePaths(
+        #[PathParam('id1')] $id1,
+        #[PathParam('id2')] $id2
+    ): array;
 }
