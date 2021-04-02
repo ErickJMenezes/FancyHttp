@@ -7,6 +7,7 @@ namespace ErickJMenezes\FancyHttp;
 use BadMethodCallException;
 use ErickJMenezes\FancyHttp\Utils\Implementer;
 use ErickJMenezes\FancyHttp\Utils\Method;
+use ErickJMenezes\FancyHttp\Utils\Parameters;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
 use InvalidArgumentException;
@@ -17,9 +18,9 @@ use ReflectionException;
 /**
  * Class ClientProxy
  *
- * @template T
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package  ErickJMenezes\FancyHttp
+ * @template T
  */
 class Client
 {
@@ -33,7 +34,7 @@ class Client
      * @param string          $baseUri
      */
     private function __construct(
-        protected string $interfaceClass,
+        string $interfaceClass,
         protected string $baseUri
     )
     {
@@ -55,7 +56,6 @@ class Client
      * @param class-string<T> $interface
      * @param string          $baseUri
      * @return T
-     * @throws \ReflectionException
      */
     public static function createFromInterface(string $interface, string $baseUri)
     {
@@ -64,9 +64,8 @@ class Client
 
     /**
      * @return T
-     * @throws \ReflectionException
      */
-    private function generate()
+    private function generate(): mixed
     {
         $implementer = new Implementer($this->interface);
         return $implementer->make($this);
@@ -74,10 +73,13 @@ class Client
 
     public function __call(string $name, array $arguments)
     {
-        if (!method_exists($this->interfaceClass, $name)) {
-            throw new BadMethodCallException("The method {$name} is not declared in {$this->interfaceClass}.");
+        if (!$this->interface->hasMethod($name)) {
+            throw new BadMethodCallException("The method {$name} is not declared in {$this->interface->getName()}.");
         }
 
-        return (new Method($this->interface, $name, $arguments))->call($this->client);
+        return (new Method(
+            $reflectedMethod = $this->interface->getMethod($name),
+            new Parameters($reflectedMethod->getParameters(), $arguments)
+        ))->call($this->client);
     }
 }
