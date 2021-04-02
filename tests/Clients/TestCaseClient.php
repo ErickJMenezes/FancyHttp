@@ -5,6 +5,9 @@ namespace Tests\Clients;
 use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\Delete;
 use ErickJMenezes\FancyHttp\Attributes\Get;
+use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
+use ErickJMenezes\FancyHttp\Attributes\Headers;
+use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\Patch;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Post;
@@ -15,6 +18,13 @@ use ErickJMenezes\FancyHttp\Attributes\Suppress;
 use Psr\Http\Message\ResponseInterface;
 
 
+/**
+ * Interface TestCaseClient
+ *
+ * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
+ * @package Tests\Clients
+ * @property-read ResponseInterface $lastResponse
+ */
 interface TestCaseClient
 {
     #[Get('todos')]
@@ -95,4 +105,29 @@ interface TestCaseClient
         #[PathParam('id1')] $id1,
         #[PathParam('id2')] $id2
     ): array;
+
+    #[Get('todos/{id}')]
+    public function invalidPathParam(#[PathParam('id')] array $id): int;
+
+    #[Get('todos')]
+    public function invalidQueryParams(
+        #[QueryParams] int $query
+    ): int;
+
+    #[Get('todos/{id}')]
+    public function invalidHeaders(
+        #[PathParam('id')] int $id,
+        #[Headers] string $headers
+    ): int;
+
+    #[Get('todos/{id}')]
+    public function invalidHeaderParam(
+        #[PathParam('id')] int $id,
+        #[HeaderParam('Authorization')] array $bearer
+    ): int;
+
+    #[Get('todos')]
+    public function invalidMultipart(
+        #[Multipart] int $parts
+    ): int;
 }

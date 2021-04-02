@@ -9,7 +9,7 @@ abstract class AbstractHttpMethod
     public function __construct(
         public string $path,
         public array $headers = [],
-        public string $httpVersion = '1.1'
+        public ?string $httpVersion = null
     )
     {
     }

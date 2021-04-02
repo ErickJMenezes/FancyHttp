@@ -11,6 +11,7 @@ use ErickJMenezes\FancyHttp\Utils\Parameters;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
 use InvalidArgumentException;
+use Psr\Http\Message\ResponseInterface;
 use ReflectionClass;
 use ReflectionException;
 
@@ -24,6 +25,7 @@ use ReflectionException;
  */
 class Client
 {
+    public ResponseInterface $lastResponse;
     protected ClientInterface $client;
     protected ReflectionClass $interface;
 
@@ -33,7 +35,7 @@ class Client
      * @param class-string<T> $interfaceClass
      * @param string          $baseUri
      */
-    private function __construct(
+    protected function __construct(
         string $interfaceClass,
         protected string $baseUri
     )
@@ -65,21 +67,31 @@ class Client
     /**
      * @return T
      */
-    private function generate(): mixed
+    protected function generate(): mixed
     {
-        $implementer = new Implementer($this->interface);
-        return $implementer->make($this);
+        return (new Implementer($this->interface))->make($this);
     }
 
     public function __call(string $name, array $arguments)
     {
-        if (!$this->interface->hasMethod($name)) {
-            throw new BadMethodCallException("The method {$name} is not declared in {$this->interface->getName()}.");
-        }
+        !$this->interface->hasMethod($name) &&
+        throw new BadMethodCallException("The method {$name} is not declared in {$this->interface->getName()}.");
 
-        return (new Method(
-            $reflectedMethod = $this->interface->getMethod($name),
-            new Parameters($reflectedMethod->getParameters(), $arguments)
-        ))->call($this->client);
+        return $this->callClientMethod($name, $arguments);
+    }
+
+    /**
+     * @param string $name
+     * @param array  $arguments
+     * @return mixed
+     * @throws \ReflectionException
+     */
+    protected function callClientMethod(string $name, array $arguments)
+    {
+        $reflectedMethod = $this->interface->getMethod($name);
+        $method = new Method($reflectedMethod, new Parameters($reflectedMethod->getParameters(), $arguments));
+        $response = $method->call($this->client);
+        $this->lastResponse = $method->getLastGuzzleResponse();
+        return $response;
     }
 }

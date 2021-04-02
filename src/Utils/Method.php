@@ -28,12 +28,11 @@ use Psr\Http\Message\ResponseInterface;
 class Method
 {
     protected static array $verbs = [Get::class, Post::class, Put::class, Patch::class, Head::class, Delete::class];
-    public ResponseInterface $lastResponse;
+    protected ResponseInterface $lastResponse;
     protected \ReflectionAttribute $httpMethodAttribute;
-    // Request Arguments
     protected string $path;
     protected array $headers;
-    protected string $httpVersion;
+    protected ?string $httpVersion;
     protected string $returnType;
 
     /**
@@ -41,7 +40,6 @@ class Method
      *
      * @param \ReflectionMethod                         $method
      * @param \ErickJMenezes\FancyHttp\Utils\Parameters $parameters
-     * @throws \Exception
      */
     public function __construct(
         protected \ReflectionMethod $method,
@@ -187,5 +185,10 @@ class Method
     protected function isSuppressed(): bool
     {
         return !is_null($this->getAttribute(Suppress::class));
+    }
+
+    public function getLastGuzzleResponse(): ResponseInterface
+    {
+        return $this->lastResponse;
     }
 }

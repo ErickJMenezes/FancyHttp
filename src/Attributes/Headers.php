@@ -6,7 +6,7 @@ namespace ErickJMenezes\FancyHttp\Attributes;
 use ErickJMenezes\FancyHttp\Traits\ExpectsArray;
 
 #[\Attribute(\Attribute::TARGET_PARAMETER)]
-class FormParams extends AbstractParameterAttribute
+class Headers extends AbstractParameterAttribute
 {
     use ExpectsArray;
 }

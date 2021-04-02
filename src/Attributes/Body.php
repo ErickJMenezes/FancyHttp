@@ -2,11 +2,14 @@
 
 namespace ErickJMenezes\FancyHttp\Attributes;
 
+use ErickJMenezes\FancyHttp\Traits\ExpectsArray;
 use GuzzleHttp\RequestOptions;
 
 #[\Attribute(\Attribute::TARGET_PARAMETER)]
-class Body
+class Body extends AbstractParameterAttribute
 {
+    use ExpectsArray;
+
     public const BODY = RequestOptions::BODY;
     public const JSON = RequestOptions::JSON;
 
