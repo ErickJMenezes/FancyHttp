@@ -5,14 +5,7 @@ namespace ErickJMenezes\FancyHttp\Attributes;
 
 
 #[\Attribute(\Attribute::TARGET_METHOD)]
-class Delete
+class Delete extends AbstractHttpMethod
 {
     public const METHOD = 'delete';
-
-    public function __construct(
-        public string $path = '',
-        public array $headers = []
-    )
-    {
-    }
 }

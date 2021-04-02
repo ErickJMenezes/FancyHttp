@@ -18,20 +18,11 @@ class Implementer
     /**
      * ClassGenerator constructor.
      *
-     * @param \ReflectionClass<T> $interface
+     * @param \ReflectionClass $interface
      */
     public function __construct(protected \ReflectionClass $interface)
     {
         $this->generateAnonymousImplementationFactory();
-    }
-
-    /**
-     * @param $parent
-     * @return T
-     */
-    public function make($parent)
-    {
-        return $this->factory->call($this, $parent);
     }
 
     protected function generateAnonymousImplementationFactory(): void
@@ -45,8 +36,7 @@ class Implementer
                 %s
             };
         };',
-            "\\{$this->interface->getName()}",
-            $this->generateMethods()
+            '\\' . $this->interface->getName(), $this->generateMethods()
         ));
     }
 
@@ -136,5 +126,14 @@ class Implementer
             $defaultValue = "={$value}";
         }
         return $defaultValue;
+    }
+
+    /**
+     * @param $parent
+     * @return T
+     */
+    public function make($parent)
+    {
+        return $this->factory->call($this, $parent);
     }
 }

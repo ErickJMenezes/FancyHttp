@@ -4,14 +4,7 @@ namespace ErickJMenezes\FancyHttp\Attributes;
 
 
 #[\Attribute(\Attribute::TARGET_METHOD)]
-class Get
+class Get extends AbstractHttpMethod
 {
     public const METHOD = 'get';
-
-    public function __construct(
-        public string $path = '',
-        public array $headers = []
-    )
-    {
-    }
 }

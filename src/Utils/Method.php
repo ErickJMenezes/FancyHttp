@@ -4,18 +4,12 @@
 namespace ErickJMenezes\FancyHttp\Utils;
 
 use ErickJMenezes\FancyHttp\Attributes\AutoMapped;
-use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\Delete;
-use ErickJMenezes\FancyHttp\Attributes\FormParams;
 use ErickJMenezes\FancyHttp\Attributes\Get;
 use ErickJMenezes\FancyHttp\Attributes\Head;
-use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
-use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\Patch;
-use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Post;
 use ErickJMenezes\FancyHttp\Attributes\Put;
-use ErickJMenezes\FancyHttp\Attributes\QueryParams;
 use ErickJMenezes\FancyHttp\Attributes\ReturnsMappedList;
 use ErickJMenezes\FancyHttp\Attributes\Suppress;
 use ErickJMenezes\FancyHttp\Castable;
@@ -27,118 +21,82 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * Class Method
  *
- * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Utils
+ * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
+ * @package  ErickJMenezes\FancyHttp\Utils
+ * @template T
  */
 class Method
 {
     protected static array $verbs = [Get::class, Post::class, Put::class, Patch::class, Head::class, Delete::class];
-
-    protected \ReflectionMethod $method;
-    protected Parameters $arguments;
-    protected \ReflectionAttribute $verb;
-    protected string $returnType;
+    public ResponseInterface $lastResponse;
+    protected \ReflectionAttribute $httpMethodAttribute;
     // Request Arguments
     protected string $path;
     protected array $headers;
-    protected array $options;
-    public ResponseInterface $lastResponse;
+    protected string $httpVersion;
+    protected string $returnType;
 
     /**
      * Method constructor.
      *
-     * @param \ReflectionClass $interface
-     * @param string           $name
-     * @param array            $arguments
-     * @throws \ReflectionException
+     * @param \ReflectionMethod                         $method
+     * @param \ErickJMenezes\FancyHttp\Utils\Parameters $parameters
+     * @throws \Exception
      */
     public function __construct(
-        protected \ReflectionClass $interface,
-        protected string $name,
-        array $arguments
+        protected \ReflectionMethod $method,
+        protected Parameters $parameters
     )
     {
-        $this->method = $this->interface->getMethod($name);
-        $this->arguments = new Parameters($this->method->getParameters(), $arguments);
-        $this->returnType = $this->method->hasReturnType() ? $this->method->getReturnType()->getName() : 'mixed';
-        $this->loadVerb();
-        $this->loadVerbArguments();
-        $this->loadOptions();
+        $this->loadRequirements();
     }
 
-    private function loadVerb(): void
+    protected function loadRequirements(): void
+    {
+        $this->loadReturnType();
+        $this->loadHttpMethodAttribute();
+        $this->loadHttpMethodArguments();
+    }
+
+    protected function loadReturnType(): void
+    {
+        $this->returnType = $this->method->hasReturnType() ?
+            $this->method->getReturnType()->getName() :
+            'mixed';
+    }
+
+    protected function loadHttpMethodAttribute(): void
     {
         foreach (self::$verbs as $attributeClass) {
             $attributes = $this->method->getAttributes($attributeClass);
             if (!empty($attributes)) {
-                $this->verb = $attributes[0];
+                $this->httpMethodAttribute = $attributes[0];
                 return;
             };
         }
-        throw new \BadMethodCallException("Verb attribute is missing.");
+        throw new \BadMethodCallException("Http method attribute is missing from method {$this->getName()}");
     }
 
-    private function loadVerbArguments(): void
+    protected function getName(): string
     {
-        [$path, $headers] = $this->verb->getArguments() + ['', []];
-        $this->headers = $headers;
-        $pathParameters = $this->arguments->getByAttribute(PathParam::class);
-        foreach ($pathParameters as $parameterName => $pathParameter) {
-            $value = $pathParameter->value;
-            $pathPlaceholder = $pathParameter->attrArgs[0];
-            $count = 0;
-            $path = str_replace('{'.$pathPlaceholder.'}', $value, $path, $count);
-            if ($count > 1) {
-                throw new \Exception("The path parameter \"{$pathPlaceholder}\" is repeated.");
-            } elseif ($count === 0) {
-                throw new \Exception("The argument \"{$parameterName}\" is not used by any path parameter.");
-            }
-        }
-        $this->path = $path;
+        return $this->method->getName();
     }
 
-    protected function loadOptions(): void
+    protected function loadHttpMethodArguments(): void
     {
-        [$bodyType, $bodyContents] = $this->getRequestBody();
-
-        $headers = $this->arguments->getFirstValueByAttribute(HeaderParam::class, []) + $this->getRequestHeaders();
-        $queryParams = $this->arguments->getFirstValueByAttribute(QueryParams::class);
-        $formParams = $this->arguments->getFirstValueByAttribute(FormParams::class);
-        $multipart = $this->arguments->getFirstValueByAttribute(Multipart::class);
-        // $httpVersion = $this->arguments->getFirstValueByAttribute(HttpVersion::class);
-        $this->options = [
-            RequestOptions::HEADERS => $headers,
-            $bodyType => $bodyContents,
-            RequestOptions::QUERY => $queryParams,
-            RequestOptions::FORM_PARAMS => $formParams,
-            RequestOptions::MULTIPART => $multipart,
-            // RequestOptions::VERSION => $httpVersion,
-            RequestOptions::HTTP_ERRORS => !$this->isSuppressed()
-        ];
-    }
-
-    protected function getRequestBody(): array
-    {
-        $body = $this->arguments->getFirstByAttribute(Body::class);
-        return [$body->attrArgs[0] ?? Body::BODY, $body->value ?? null];
-    }
-
-    private function getRequestHeaders(): array
-    {
-        return $this->verb->getArguments()[1] ?? [];
-    }
-
-    private function isSuppressed(): bool
-    {
-        return !empty($this->method->getAttributes(Suppress::class));
+        /** @var \ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod $method */
+        $method = $this->httpMethodAttribute->newInstance();
+        $this->headers = $method->headers;
+        $this->httpVersion = $method->httpVersion;
+        $this->path = $this->parameters->parsePath($method->path);
     }
 
     public function call(ClientInterface $client): mixed
     {
         return $this->castResponse($this->lastResponse = $client->request(
-            $this->verb->getName()::METHOD,
+            $this->httpMethodAttribute->getName()::METHOD,
             $this->path,
-            $this->options
+            $this->getOptions()
         ));
     }
 
@@ -166,42 +124,68 @@ class Method
         };
     }
 
-    public function isReturnTypeCastable(): bool
+    protected function isReturnTypeCastable(): bool
     {
-        return class_exists($this->returnType) &&
-            !empty(array_filter(
-                class_implements($this->returnType),
-                fn($interface) => $interface === Castable::class
-            ));
+        try {
+            $returnType = new \ReflectionClass($this->returnType);
+            return $returnType->implementsInterface(Castable::class);
+        } catch (\ReflectionException) {
+            return false;
+        }
     }
 
     protected function isReturnTypeAutoMapped(): false|\ReflectionClass
     {
+        return $this->isAnAutoMappedInterface($this->returnType);
+    }
+
+    protected function isAnAutoMappedInterface($value): false|\ReflectionClass
+    {
         try {
-            if (interface_exists($this->returnType)) {
-                $reflection = new \ReflectionClass($this->returnType);
-                if (isset($reflection->getAttributes(AutoMapped::class)[0]))
-                    return $reflection;
-            }
-        } catch (\Throwable) {
+            $reflection = new \ReflectionClass($value);
+            if (
+                $reflection->isInterface() &&
+                isset($reflection->getAttributes(AutoMapped::class)[0])
+            )
+                return $reflection;
+        } catch (\ReflectionException) {
         }
         return false;
     }
 
     protected function methodReturnsAutoMappedList(): \ReflectionClass|false
     {
-        if ($attribute = $this->method->getAttributes(ReturnsMappedList::class)[0] ?? false) {
+        if ($attribute = $this->getAttribute(ReturnsMappedList::class)) {
             $arg = $attribute->getArguments()[0];
-            try {
-                if (interface_exists($arg)) {
-                    $reflection = new \ReflectionClass($arg);
-                    if (isset($reflection->getAttributes(AutoMapped::class)[0]))
-                        return $reflection;
-                }
-            } catch (\Throwable) {
-            }
+            return $this->isAnAutoMappedInterface($arg);
         }
-
         return false;
+    }
+
+    /**
+     * @param class-string $name
+     * @return \ReflectionAttribute|null
+     */
+    protected function getAttribute(string $name): ?\ReflectionAttribute
+    {
+        return $this->method->getAttributes($name)[0] ?? null;
+    }
+
+    protected function getOptions(): array
+    {
+        [$bodyType, $bodyContents] = $this->parameters->getBodyParam();
+        return array_filter([
+                RequestOptions::HEADERS => $this->parameters->getHeaderParams() + $this->headers,
+                $bodyType => $bodyContents,
+                RequestOptions::QUERY => $this->parameters->getQueryParameters(),
+                RequestOptions::FORM_PARAMS => $this->parameters->getFormParams(),
+                RequestOptions::MULTIPART => $this->parameters->getMultipartParams(),
+                RequestOptions::VERSION => $this->httpVersion,
+            ]) + [RequestOptions::HTTP_ERRORS => !$this->isSuppressed()];
+    }
+
+    protected function isSuppressed(): bool
+    {
+        return !is_null($this->getAttribute(Suppress::class));
     }
 }

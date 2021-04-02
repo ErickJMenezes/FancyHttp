@@ -53,12 +53,12 @@ class AMProxy implements \JsonSerializable, \ArrayAccess, \Iterator
 
     public function __call(string $name, array $arguments)
     {
-        $name = $this->sanitizeKey($name);
+        $sanitizedName = $this->sanitizeKey($name);
 
-        if (str_starts_with($name, 'get')) {
-            return $this->get(substr($name, 3));
-        } elseif (str_starts_with($name, 'set')) {
-            $this->set(substr($name, 3), $arguments[0]);
+        if (str_starts_with($sanitizedName, 'get')) {
+            return $this->get(substr($sanitizedName, 3));
+        } elseif (str_starts_with($sanitizedName, 'set')) {
+            $this->set(substr($sanitizedName, 3), $arguments[0]);
         } else {
             throw new \BadMethodCallException("The method {$name} is not legal for AutoMapped interfaces.");
         }

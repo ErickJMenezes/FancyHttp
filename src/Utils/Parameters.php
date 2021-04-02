@@ -4,6 +4,13 @@
 namespace ErickJMenezes\FancyHttp\Utils;
 
 
+use ErickJMenezes\FancyHttp\Attributes\Body;
+use ErickJMenezes\FancyHttp\Attributes\FormParams;
+use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
+use ErickJMenezes\FancyHttp\Attributes\Multipart;
+use ErickJMenezes\FancyHttp\Attributes\PathParam;
+use ErickJMenezes\FancyHttp\Attributes\QueryParams;
+
 class Parameters
 {
     protected array $argsNameMap;
@@ -23,7 +30,7 @@ class Parameters
         $this->loadParameters();
     }
 
-    private function loadParameters(): void
+    protected function loadParameters(): void
     {
         foreach ($this->reflectionParameters as $parameter) {
             $this->argsNameMap[$parameter->getName()] =
@@ -42,7 +49,7 @@ class Parameters
         }
     }
 
-    public function getByIndex(int $index): mixed
+    protected function getByIndex(int $index): mixed
     {
         if (isset($this->argsPositionMap[$index])) {
             return $this->argsPositionMap[$index];
@@ -50,42 +57,37 @@ class Parameters
         throw new \InvalidArgumentException("The argument index \"{$index}\" is invalid.");
     }
 
-    public function getAllNamed(): array
+    public function getQueryParameters(): array
     {
-        return $this->argsNameMap;
-    }
-
-    public function getAllIndexed(): array
-    {
-        return $this->argsPositionMap;
-    }
-
-    public function forEachOfAttribute(string $attribute, callable $callback): void
-    {
-        foreach ($this->getByAttribute($attribute) as $name => $value)
-            $callback($value, $name);
+        return $this->getAllArrayParamsOfAttributeType(QueryParams::class);
     }
 
     /**
-     * @param string $attribute
-     * @return \ArrayObject[]
+     * @param class-string $attribute
+     * @return array
      */
-    public function getByAttribute(string $attribute): array
+    protected function getAllArrayParamsOfAttributeType(string $attribute): array
     {
-        // First, we'll filter the parameters with the given attribute
-        $params = array_filter(
+        $data = [];
+        $params = $this->getWhereHasAttribute($attribute);
+        array_walk($params, function (\ReflectionParameter $parameter) use (&$data) {
+            $value = $this->getByName($parameter->getName());
+            $data += $value;
+        });
+        return $data;
+    }
+
+    /**
+     * @param class-string $attribute
+     * @return \ReflectionParameter[]
+     */
+    public function getWhereHasAttribute(string $attribute): array
+    {
+        return array_filter(
             $this->reflectionParameters,
-            fn(\ReflectionParameter $param) => !empty($param->getAttributes($attribute))
+            fn(\ReflectionParameter $param) => !empty($param->getAttributes($attribute)),
+
         );
-        // Then we just create a new dictionary with the real parameter values.
-        $paramList = [];
-        foreach ($params as $param) {
-            $paramList[$param->getName()] = new \ArrayObject([
-                'value' => $this->getByName($param->getName()),
-                'attrArgs' => $param->getAttributes($attribute)[0]->getArguments()
-            ], \ArrayObject::ARRAY_AS_PROPS);
-        }
-        return $paramList;
     }
 
     public function getByName(string $name): mixed
@@ -96,18 +98,56 @@ class Parameters
         throw new \InvalidArgumentException("The argument name \"{$name}\" is invalid.");
     }
 
-    public function getFirstValueByAttribute(string $attribute, $fallbackValue = null): mixed
+    public function getHeaderParams(): array
     {
-        return $this->getFirstByAttribute($attribute)->value ?? $fallbackValue;
+        return $this->getAllArrayParamsOfAttributeType(HeaderParam::class);
     }
 
-    public function getFirstByAttribute(string $attribute): ?\ArrayObject
+    public function getFormParams(): array
     {
-        $value = $this->getByAttribute($attribute);
-        if (!empty($value)) {
-            $keyFirst = array_key_first($value);
-            return $value[$keyFirst] ?? null;
+        return $this->getAllArrayParamsOfAttributeType(FormParams::class);
+    }
+
+    public function getMultipartParams(): array
+    {
+        return $this->getAllArrayParamsOfAttributeType(Multipart::class);
+    }
+
+    public function getBodyParam(): array
+    {
+        $parametersWithBody = $this->getWhereHasAttribute(Body::class);
+        $count = count($parametersWithBody);
+        if ($count > 1) {
+            throw new \Exception("Only one body param are allowed.");
+        } elseif ($count === 0) {
+            return [Body::BODY, null];
         }
-        return null;
+        $parameter = $parametersWithBody[array_key_first($parametersWithBody)];
+        $bodyParam = $parameter->getAttributes(Body::class)[0];
+        $bodyType = $bodyParam->newInstance()->type;
+        $body = $this->getAllArrayParamsOfAttributeType(Body::class);
+        return [$bodyType, $body];
+    }
+
+    public function parsePath(string $path): string
+    {
+        $pathParameters = $this->getWhereHasAttribute(PathParam::class);
+        foreach ($pathParameters as $pathParameter) {
+            $value = $this->getByName($pathParameter->getName());
+            $pathPlaceholder = $pathParameter->getAttributes(PathParam::class)[0]->newInstance()->paramName;
+            $count = 0;
+            $path = str_replace('{' . $pathPlaceholder . '}', $value, $path, $count);
+            if ($count > 1) {
+                throw new \Exception("The path parameter \"{$pathPlaceholder}\" is repeated.");
+            } elseif ($count === 0) {
+                throw new \Exception("The argument \"{$pathParameter->getName()}\" is not used by any path parameter.");
+            }
+        }
+        $missing = [];
+        if (preg_match('/{.*?}/', $path, $missing)) {
+            [$name] = $missing;
+            throw new \Exception("The path parameter \"{$name}\" has no replacement");
+        }
+        return $path;
     }
 }
