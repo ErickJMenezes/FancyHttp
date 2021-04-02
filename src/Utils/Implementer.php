@@ -13,6 +13,7 @@ namespace ErickJMenezes\FancyHttp\Utils;
  */
 class Implementer
 {
+    protected static array $cache;
     protected \Closure $factory;
 
     /**
@@ -22,12 +23,12 @@ class Implementer
      */
     public function __construct(protected \ReflectionClass $interface)
     {
-        $this->generateAnonymousImplementationFactory();
+        $this->factory = static::$cache[$this->interface->getName()] ??= $this->generateAnonymousImplementationFactory();
     }
 
-    protected function generateAnonymousImplementationFactory(): void
+    protected function generateAnonymousImplementationFactory(): \Closure
     {
-        $this->factory = eval(sprintf('return function ($parent) {
+        return eval(sprintf('return function ($parent) {
             return new class ($parent) implements %s {
                 public function __construct(protected $parent) {}
                 public function __get(string $name) {return $this->parent->$name;}
@@ -48,16 +49,14 @@ class Implementer
      */
     protected function generateMethods(): string
     {
-        $methods = [];
+        $methods = '';
         foreach ($this->interface->getMethods() as $method) {
-            if ($method->isStatic()) {
-                throw new \Exception("Static methods are not allowed, please remove the method \"{$method->getName()}\".");
-            }
+            $method->isStatic()
+            && throw new \Exception("Static methods are not allowed, please remove the method \"{$method->getName()}\".");
             $parameterList = [];
             foreach ($method->getParameters() as $parameter) {
-                if ($parameter->isVariadic() || $parameter->isPassedByReference()) {
-                    throw new \Exception("Variadic or passed by reference parameters are forbidden. Please fix the method \"{$method->getName()}\".");
-                }
+                ($parameter->isVariadic() || $parameter->isPassedByReference())
+                && throw new \Exception("Variadic or passed by reference parameters are forbidden. Please fix the method \"{$method->getName()}\".");
                 $paramType = $this->getParameterType($parameter);
                 $argName = $parameter->getName();
                 $defaultValue = $this->getParameterDefaultValue($parameter);
@@ -67,10 +66,10 @@ class Implementer
             $returnTypeName = $method->hasReturnType() ? $this->getTypeName($method->getReturnType()) : '';
             $showReturnType = $method->hasReturnType() ? ': ' . $returnTypeName : $returnTypeName;
             $returnStatement = $returnTypeName === 'void' ? '' : 'return ';
-            $methods[] = "public function {$method->getName()}({$parameterList}){$showReturnType} 
+            $methods .= "public function {$method->getName()}({$parameterList}){$showReturnType} 
             {{$returnStatement}\$this->callParent(\"{$method->getName()}\", func_get_args());}";
         }
-        return join(PHP_EOL, $methods);
+        return $methods;
     }
 
     /**
@@ -95,9 +94,8 @@ class Implementer
      */
     protected function checkIsUnionType(?\ReflectionType $parameterType): void
     {
-        if ($parameterType instanceof \ReflectionUnionType) {
-            throw new \Exception("Union types are not allowed.");
-        }
+        $parameterType instanceof \ReflectionUnionType &&
+        throw new \Exception("Union types are not allowed.");
     }
 
     protected function getTypeName(\ReflectionType $reflectionType): string
@@ -118,14 +116,11 @@ class Implementer
     {
         $defaultValue = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : $this;
         if ($defaultValue instanceof $this) {
-            $defaultValue = '';
-        } else {
-            $value = is_string($defaultValue) ?
-                "\"{$defaultValue}\"" :
-                var_export($defaultValue, true);
-            $defaultValue = "={$value}";
+            return '';
+        } elseif (is_string($defaultValue)) {
+            return "=\"{$defaultValue}\"";
         }
-        return $defaultValue;
+        return '=' . var_export($defaultValue, true);
     }
 
     /**
