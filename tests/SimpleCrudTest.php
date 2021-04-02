@@ -29,7 +29,6 @@ class SimpleCrudTest extends TestCase
     public function testGetTodos(TestCaseClient $client)
     {
         $response = $client->getTodos();
-        $this->assertIsArray($response, 'response is not array');
         $user = $response[0];
         $this->assertArrayHasKey('id', $user);
     }
@@ -41,7 +40,6 @@ class SimpleCrudTest extends TestCase
     public function testGetTodoById(TestCaseClient $client)
     {
         $response = $client->getTodoById(1);
-        $this->assertIsArray($response, 'response is not array');
         self::assertArrayHasKey('id', $response, 'Todo must have an id');
     }
 
@@ -68,7 +66,6 @@ class SimpleCrudTest extends TestCase
             'title' => 'test case',
             'completed' => true
         ]);
-        $this->assertIsArray($response, 'response is not array');
         $this->assertArrayHasKey('id', $response, 'Response must have a id');
         $this->assertArrayHasKey('userId', $response, 'Response must have a userId');
         $this->assertArrayHasKey('completed', $response, 'Response must have a completed state');
@@ -82,7 +79,6 @@ class SimpleCrudTest extends TestCase
     public function testUpdateTodo(TestCaseClient $client)
     {
         $response = $client->getTodoById(1);
-        $this->assertIsArray($response, 'response is not array');
         $this->assertArrayHasKey('id', $response, 'Todo must have an id');
         $response['title'] = 'testCase';
         $updatedResponse = $client->updateTodo(1, $response);
@@ -118,7 +114,6 @@ class SimpleCrudTest extends TestCase
     public function testQueryParamPlusQueryStringParameters(TestCaseClient $client)
     {
         $response = $client->getUserTodos(1, ['id' => 3]);
-        self::assertIsArray($response, 'Response must be a array');
         self::assertTrue(count($response) === 1, 'Response must have a size of 1');
         self::assertTrue($response[0]['id'] === 3, 'TodoId is incorrect.');
         self::assertTrue($response[0]['userId'] === 1, 'UserId is incorrect.');
@@ -132,5 +127,6 @@ class SimpleCrudTest extends TestCase
     {
         $response = $client->getTodoByIdSuppressed(99999);
         self::assertTrue($response->getStatusCode() === 404);
+        self::assertTrue($client->lastResponse->getStatusCode() === 404);
     }
 }

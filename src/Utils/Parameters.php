@@ -7,6 +7,7 @@ namespace ErickJMenezes\FancyHttp\Utils;
 use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\FormParams;
 use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
+use ErickJMenezes\FancyHttp\Attributes\Headers;
 use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\QueryParams;
@@ -49,14 +50,6 @@ class Parameters
         }
     }
 
-    protected function getByIndex(int $index): mixed
-    {
-        if (isset($this->argsPositionMap[$index])) {
-            return $this->argsPositionMap[$index];
-        }
-        throw new \InvalidArgumentException("The argument index \"{$index}\" is invalid.");
-    }
-
     public function getQueryParameters(): array
     {
         return $this->getAllArrayParamsOfAttributeType(QueryParams::class);
@@ -85,22 +78,40 @@ class Parameters
     {
         return array_filter(
             $this->reflectionParameters,
-            fn(\ReflectionParameter $param) => !empty($param->getAttributes($attribute)),
-
+            fn(\ReflectionParameter $param) => !empty($this->checkAttributeExpectations(
+                $param,
+                $param->getAttributes($attribute)
+            ))
         );
+    }
+
+    /**
+     * @param \ReflectionParameter   $param
+     * @param \ReflectionAttribute[] $reflectionAttributes
+     * @return \ReflectionAttribute[]
+     */
+    protected function checkAttributeExpectations(\ReflectionParameter $param, array $reflectionAttributes): array
+    {
+        foreach ($reflectionAttributes as $attribute)
+            $attribute->newInstance()->check($this->getByName($param->getName()));
+        return $reflectionAttributes;
     }
 
     public function getByName(string $name): mixed
     {
-        if (isset($this->argsNameMap[$name])) {
-            return $this->argsNameMap[$name];
-        }
-        throw new \InvalidArgumentException("The argument name \"{$name}\" is invalid.");
+        return $this->argsNameMap[$name];
     }
 
     public function getHeaderParams(): array
     {
-        return $this->getAllArrayParamsOfAttributeType(HeaderParam::class);
+        $headers = $this->getAllArrayParamsOfAttributeType(Headers::class);
+        $headerParams = $this->getWhereHasAttribute(HeaderParam::class);
+        foreach ($headerParams as $headerParam) {
+            /** @var HeaderParam $attribute */
+            $attribute = $headerParam->getAttributes(HeaderParam::class)[0]->newInstance();
+            $headers[$attribute->headerName] = $this->getByName($headerParam->getName());
+        }
+        return $headers;
     }
 
     public function getFormParams(): array
@@ -116,17 +127,18 @@ class Parameters
     public function getBodyParam(): array
     {
         $parametersWithBody = $this->getWhereHasAttribute(Body::class);
-        $count = count($parametersWithBody);
-        if ($count > 1) {
-            throw new \Exception("Only one body param are allowed.");
-        } elseif ($count === 0) {
-            return [Body::BODY, null];
+        switch (count($parametersWithBody)) {
+            case 0:
+                return [Body::BODY, null];
+            case 1:
+                $parameter = $parametersWithBody[array_key_first($parametersWithBody)];
+                $bodyParam = $parameter->getAttributes(Body::class)[0];
+                $bodyType = $bodyParam->newInstance()->type;
+                $body = $this->getAllArrayParamsOfAttributeType(Body::class);
+                return [$bodyType, $body];
+            default:
+                throw new \Exception("Only one body param are allowed.");
         }
-        $parameter = $parametersWithBody[array_key_first($parametersWithBody)];
-        $bodyParam = $parameter->getAttributes(Body::class)[0];
-        $bodyType = $bodyParam->newInstance()->type;
-        $body = $this->getAllArrayParamsOfAttributeType(Body::class);
-        return [$bodyType, $body];
     }
 
     public function parsePath(string $path): string
@@ -149,5 +161,10 @@ class Parameters
             throw new \Exception("The path parameter \"{$name}\" has no replacement");
         }
         return $path;
+    }
+
+    protected function getByIndex(int $index): mixed
+    {
+        return $this->argsPositionMap[$index];
     }
 }
