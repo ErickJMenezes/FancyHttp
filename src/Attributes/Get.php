@@ -3,8 +3,13 @@
 namespace ErickJMenezes\FancyHttp\Attributes;
 
 
-#[\Attribute(\Attribute::TARGET_METHOD)]
+use Attribute;
+
+#[Attribute(Attribute::TARGET_METHOD)]
 class Get extends AbstractHttpMethod
 {
-    public const METHOD = 'get';
+    public static function method(): string
+    {
+        return 'GET';
+    }
 }

@@ -3,13 +3,15 @@
 
 namespace ErickJMenezes\FancyHttp\Attributes;
 
+use Attribute;
+
 /**
  * Class Api
  *
  * @author ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package ErickJMenezes\FancyHttp\Attributes
  */
-#[\Attribute(\Attribute::TARGET_CLASS)]
+#[Attribute(Attribute::TARGET_CLASS)]
 class Api
 {
     /**

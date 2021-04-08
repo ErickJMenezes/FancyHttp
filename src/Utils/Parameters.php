@@ -11,11 +11,20 @@ use ErickJMenezes\FancyHttp\Attributes\Headers;
 use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\QueryParams;
+use Exception;
+use InvalidArgumentException;
+use ReflectionParameter;
 
+/**
+ * Class Parameters
+ *
+ * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
+ * @package ErickJMenezes\FancyHttp\Utils
+ */
 class Parameters
 {
-    protected array $argsNameMap;
-    protected array $argsPositionMap;
+    protected array $argsNameMap = [];
+    protected array $argsPositionMap = [];
 
     /**
      * MethodArguments constructor.
@@ -45,7 +54,7 @@ class Parameters
                 (
                 $parameter->isDefaultValueAvailable()
                     ? $parameter->getDefaultValue() :
-                    throw new \InvalidArgumentException("Required argument {$parameter->name} is missing.")
+                    throw new InvalidArgumentException("Required argument {$parameter->name} is missing.")
                 );
         }
     }
@@ -63,7 +72,7 @@ class Parameters
     {
         $data = [];
         $params = $this->getWhereHasAttribute($attribute);
-        array_walk($params, function (\ReflectionParameter $parameter) use (&$data) {
+        array_walk($params, function (ReflectionParameter $parameter) use (&$data) {
             $value = $this->getByName($parameter->getName());
             $data += $value;
         });
@@ -71,30 +80,36 @@ class Parameters
     }
 
     /**
-     * @param class-string $attribute
-     * @return \ReflectionParameter[]
+     * @param class-string<TAttr> $attribute
+     * @return array<int,ReflectionParameter>
+     * @template TAttr of \ErickJMenezes\FancyHttp\Attributes\AbstractParameterAttribute
      */
     public function getWhereHasAttribute(string $attribute): array
     {
-        return array_filter(
+        $parameters = array_values(array_filter(
             $this->reflectionParameters,
-            fn(\ReflectionParameter $param) => !empty($this->checkAttributeExpectations(
-                $param,
-                $param->getAttributes($attribute)
-            ))
-        );
+            fn(ReflectionParameter $param) => !empty($param->getAttributes($attribute))
+        ));
+        $this->checkAttributeExpectations($parameters, $attribute);
+        return $parameters;
     }
 
     /**
-     * @param \ReflectionParameter   $param
-     * @param \ReflectionAttribute[] $reflectionAttributes
-     * @return \ReflectionAttribute[]
+     * @param array<\ReflectionParameter> $params
+     * @param class-string<TAttr>         $attribute
+     * @return void
+     * @template TAttr of \ErickJMenezes\FancyHttp\Attributes\AbstractParameterAttribute
      */
-    protected function checkAttributeExpectations(\ReflectionParameter $param, array $reflectionAttributes): array
+    protected function checkAttributeExpectations(array $params, string $attribute): void
     {
-        foreach ($reflectionAttributes as $attribute)
-            $attribute->newInstance()->check($this->getByName($param->getName()));
-        return $reflectionAttributes;
+        foreach ($params as $parameter)
+            /**
+             * @var \ReflectionAttribute<TAttr> $reflectionAttribute
+             * @noinspection PhpRedundantVariableDocTypeInspection
+             */
+            foreach ($parameter->getAttributes($attribute) as $reflectionAttribute)
+                $reflectionAttribute->newInstance()
+                    ->check($this->getByName($parameter->getName()));
     }
 
     public function getByName(string $name): mixed
@@ -124,6 +139,9 @@ class Parameters
         return $this->getAllArrayParamsOfAttributeType(Multipart::class);
     }
 
+    /**
+     * @throws \Exception
+     */
     public function getBodyParam(): array
     {
         $parametersWithBody = $this->getWhereHasAttribute(Body::class);
@@ -137,7 +155,7 @@ class Parameters
                 $body = $this->getAllArrayParamsOfAttributeType(Body::class);
                 return [$bodyType, $body];
             default:
-                throw new \Exception("Only one body param are allowed.");
+                throw new Exception("Only one body param are allowed.");
         }
     }
 
@@ -150,15 +168,15 @@ class Parameters
             $count = 0;
             $path = str_replace('{' . $pathPlaceholder . '}', $value, $path, $count);
             if ($count > 1) {
-                throw new \Exception("The path parameter \"{$pathPlaceholder}\" is repeated.");
+                throw new Exception("The path parameter \"{$pathPlaceholder}\" is repeated.");
             } elseif ($count === 0) {
-                throw new \Exception("The argument \"{$pathParameter->getName()}\" is not used by any path parameter.");
+                throw new Exception("The argument \"{$pathParameter->getName()}\" is not used by any path parameter.");
             }
         }
         $missing = [];
         if (preg_match('/{.*?}/', $path, $missing)) {
             [$name] = $missing;
-            throw new \Exception("The path parameter \"{$name}\" has no replacement");
+            throw new Exception("The path parameter \"{$name}\" has no replacement");
         }
         return $path;
     }

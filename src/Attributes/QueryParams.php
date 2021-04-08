@@ -3,6 +3,7 @@
 
 namespace ErickJMenezes\FancyHttp\Attributes;
 
+use Attribute;
 use ErickJMenezes\FancyHttp\Traits\ExpectsArray;
 
 /**
@@ -13,7 +14,7 @@ use ErickJMenezes\FancyHttp\Traits\ExpectsArray;
  * @author ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package ErickJMenezes\FancyHttp\Attributes
  */
-#[\Attribute(\Attribute::TARGET_PARAMETER)]
+#[Attribute(Attribute::TARGET_PARAMETER)]
 class QueryParams extends AbstractParameterAttribute
 {
     use ExpectsArray;

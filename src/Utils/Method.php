@@ -3,6 +3,9 @@
 
 namespace ErickJMenezes\FancyHttp\Utils;
 
+use ArrayObject;
+use BadMethodCallException;
+use ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod;
 use ErickJMenezes\FancyHttp\Attributes\AutoMapped;
 use ErickJMenezes\FancyHttp\Attributes\Delete;
 use ErickJMenezes\FancyHttp\Attributes\Get;
@@ -17,6 +20,11 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
+use ReflectionAttribute;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
+use RuntimeException;
 
 /**
  * Class Method
@@ -27,13 +35,13 @@ use Psr\Http\Message\ResponseInterface;
  */
 class Method
 {
+    /**
+     * @var array<class-string<AbstractHttpMethod>>
+     */
     protected static array $verbs = [Get::class, Post::class, Put::class, Patch::class, Head::class, Delete::class];
-    protected ResponseInterface $lastResponse;
-    protected \ReflectionAttribute $httpMethodAttribute;
-    protected string $path;
-    protected array $headers;
-    protected ?string $httpVersion;
+    protected ?ResponseInterface $lastResponse = null;
     protected string $returnType;
+    protected AbstractHttpMethod $verb;
 
     /**
      * Method constructor.
@@ -42,7 +50,7 @@ class Method
      * @param \ErickJMenezes\FancyHttp\Utils\Parameters $parameters
      */
     public function __construct(
-        protected \ReflectionMethod $method,
+        protected ReflectionMethod $method,
         protected Parameters $parameters
     )
     {
@@ -51,28 +59,20 @@ class Method
 
     protected function loadRequirements(): void
     {
-        $this->loadReturnType();
-        $this->loadHttpMethodAttribute();
-        $this->loadHttpMethodArguments();
+        $this->loadVerb();
+        $this->returnType = $this->method->getReturnType()?->getName() ?? 'mixed';
     }
 
-    protected function loadReturnType(): void
+    protected function loadVerb(): void
     {
-        $this->returnType = $this->method->hasReturnType() ?
-            $this->method->getReturnType()->getName() :
-            'mixed';
-    }
-
-    protected function loadHttpMethodAttribute(): void
-    {
-        foreach (self::$verbs as $attributeClass) {
-            $attributes = $this->method->getAttributes($attributeClass);
+        foreach (self::$verbs as $verb) {
+            $attributes = $this->method->getAttributes($verb);
             if (!empty($attributes)) {
-                $this->httpMethodAttribute = $attributes[0];
+                $this->verb = $attributes[0]->newInstance();
                 return;
-            };
+            }
         }
-        throw new \BadMethodCallException("Http method attribute is missing from method {$this->getName()}");
+        throw new BadMethodCallException("Http method attribute is missing from method {$this->getName()}");
     }
 
     protected function getName(): string
@@ -80,82 +80,122 @@ class Method
         return $this->method->getName();
     }
 
-    protected function loadHttpMethodArguments(): void
-    {
-        /** @var \ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod $method */
-        $method = $this->httpMethodAttribute->newInstance();
-        $this->headers = $method->headers;
-        $this->httpVersion = $method->httpVersion;
-        $this->path = $this->parameters->parsePath($method->path);
-    }
-
+    /**
+     * @param \GuzzleHttp\ClientInterface $client
+     * @return mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
     public function call(ClientInterface $client): mixed
     {
         return $this->castResponse($this->lastResponse = $client->request(
-            $this->httpMethodAttribute->getName()::METHOD,
-            $this->path,
+            $this->verb::method(),
+            $this->parameters->parsePath($this->verb->path),
             $this->getOptions()
         ));
     }
 
+    /**
+     * @param \Psr\Http\Message\ResponseInterface $response
+     * @return mixed
+     * @throws \Exception
+     */
     protected function castResponse(ResponseInterface $response): mixed
     {
-        $decodedResponse = fn() => json_decode($response->getBody()->getContents(), true);
-        if ($this->isReturnTypeCastable())
+        if ($this->isReturnTypeCastable()) {
             return $this->returnType::castResponse($response);
-        elseif ($modelInterface = $this->isReturnTypeAutoMapped()) {
-            return AMProxy::make($modelInterface, $decodedResponse());
+        } elseif ($modelInterface = $this->isReturnTypeAutoMapped()) {
+            return self::createProxy($modelInterface, $this->decodeResponse($response));
         } elseif ($modelInterface = $this->methodReturnsAutoMappedList()) {
-            $data = AMProxy::makeMany($modelInterface, $decodedResponse());
-            return $this->returnType === \ArrayObject::class ? new \ArrayObject($data) : $data;
+            $data = self::createProxies($modelInterface, $this->decodeResponse($response));
+            return $this->returnType === ArrayObject::class ? new ArrayObject($data) : $data;
         }
 
         return match ($this->returnType) {
-            'array' => $decodedResponse(),
+            'array' => $this->decodeResponse($response),
             'void', 'null' => null,
             'bool' => true,
             'string' => $response->getBody()->getContents(),
             'int', 'float', 'double' => $response->getStatusCode(),
-            'object', \ArrayObject::class => new \ArrayObject($decodedResponse(), \ArrayObject::ARRAY_AS_PROPS),
+            'object', ArrayObject::class => new ArrayObject($this->decodeResponse($response), ArrayObject::ARRAY_AS_PROPS),
             ResponseInterface::class, Response::class, 'mixed' => $response,
-            default => throw new \RuntimeException("{$this->returnType} is not a valid return type.")
+            default => throw new RuntimeException("{$this->returnType} is not a valid return type.")
         };
     }
 
     protected function isReturnTypeCastable(): bool
     {
         try {
-            $returnType = new \ReflectionClass($this->returnType);
+            $returnType = new ReflectionClass($this->returnType);
             return $returnType->implementsInterface(Castable::class);
-        } catch (\ReflectionException) {
+        } catch (ReflectionException) {
             return false;
         }
     }
 
-    protected function isReturnTypeAutoMapped(): false|\ReflectionClass
+    protected function isReturnTypeAutoMapped(): false|ReflectionClass
     {
         return $this->isAnAutoMappedInterface($this->returnType);
     }
 
-    protected function isAnAutoMappedInterface($value): false|\ReflectionClass
+    /**
+     * @param class-string|mixed $value
+     * @return false|\ReflectionClass
+     */
+    protected function isAnAutoMappedInterface(mixed $value): false|ReflectionClass
     {
         try {
-            $reflection = new \ReflectionClass($value);
+            $reflection = new ReflectionClass($value);
             if (
                 $reflection->isInterface() &&
-                isset($reflection->getAttributes(AutoMapped::class)[0])
+                !empty($reflection->getAttributes(AutoMapped::class))
             )
                 return $reflection;
-        } catch (\ReflectionException) {
+        } catch (ReflectionException) {
         }
         return false;
     }
 
-    protected function methodReturnsAutoMappedList(): \ReflectionClass|false
+    /**
+     * @param \ReflectionClass<IType> $interface
+     * @param array<string, mixed>    $data
+     * @return IType
+     * @throws \Exception
+     * @template IType of object
+     */
+    protected static function createProxy(ReflectionClass $interface, array $data): mixed
+    {
+        return self::createProxies($interface, [$data])[0];
+    }
+
+    /**
+     * @param \ReflectionClass<IType>     $interface
+     * @param array<array<string, mixed>> $data
+     * @return array<IType>
+     * @throws \Exception
+     * @template IType of object
+     */
+    protected static function createProxies(ReflectionClass $interface, array $data): array
+    {
+        $implementer = new Implementer($interface);
+        $list = [];
+        foreach ($data as $item) $list[] = $implementer->make(new AMProxy($item));
+        return $list;
+    }
+
+    /**
+     * @param \Psr\Http\Message\ResponseInterface $response
+     * @return array
+     */
+    protected function decodeResponse(ResponseInterface $response): array
+    {
+        return (array)json_decode($response->getBody()->getContents(), true);
+    }
+
+    protected function methodReturnsAutoMappedList(): ReflectionClass|false
     {
         if ($attribute = $this->getAttribute(ReturnsMappedList::class)) {
-            $arg = $attribute->getArguments()[0];
-            return $this->isAnAutoMappedInterface($arg);
+            return $this->isAnAutoMappedInterface($attribute->getArguments()[0]);
         }
         return false;
     }
@@ -164,7 +204,7 @@ class Method
      * @param class-string $name
      * @return \ReflectionAttribute|null
      */
-    protected function getAttribute(string $name): ?\ReflectionAttribute
+    protected function getAttribute(string $name): ?ReflectionAttribute
     {
         return $this->method->getAttributes($name)[0] ?? null;
     }
@@ -173,12 +213,12 @@ class Method
     {
         [$bodyType, $bodyContents] = $this->parameters->getBodyParam();
         return array_filter([
-                RequestOptions::HEADERS => $this->parameters->getHeaderParams() + $this->headers,
+                RequestOptions::HEADERS => $this->parameters->getHeaderParams() + $this->verb->headers,
                 $bodyType => $bodyContents,
                 RequestOptions::QUERY => $this->parameters->getQueryParameters(),
                 RequestOptions::FORM_PARAMS => $this->parameters->getFormParams(),
                 RequestOptions::MULTIPART => $this->parameters->getMultipartParams(),
-                RequestOptions::VERSION => $this->httpVersion,
+                RequestOptions::VERSION => $this->verb->httpVersion,
             ]) + [RequestOptions::HTTP_ERRORS => !$this->isSuppressed()];
     }
 
@@ -187,7 +227,7 @@ class Method
         return !is_null($this->getAttribute(Suppress::class));
     }
 
-    public function getLastGuzzleResponse(): ResponseInterface
+    public function getLastGuzzleResponse(): ?ResponseInterface
     {
         return $this->lastResponse;
     }

@@ -13,4 +13,6 @@ abstract class AbstractHttpMethod
     )
     {
     }
+
+    abstract public static function method(): string;
 }

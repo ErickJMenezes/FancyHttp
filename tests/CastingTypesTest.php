@@ -110,7 +110,7 @@ class CastingTypesTest extends TestCase
     public function testCastable(TestCaseClient $client)
     {
         $response = $client->getTodoByIdCastable(1);
-        self::assertTrue(true, 'Something goes wrong');
+        self::assertTrue(true);
     }
 
     /**

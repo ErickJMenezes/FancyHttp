@@ -3,7 +3,9 @@
 
 namespace ErickJMenezes\FancyHttp\Attributes;
 
-#[\Attribute(\Attribute::TARGET_METHOD)]
+use Attribute;
+
+#[Attribute(Attribute::TARGET_METHOD)]
 class Suppress
 {
 }

@@ -4,20 +4,33 @@
 namespace ErickJMenezes\FancyHttp\Utils;
 
 
+use ArrayAccess;
+use BadMethodCallException;
+use Iterator;
+use JsonSerializable;
+use Throwable;
+
 /**
  * Class AutoMappedProxy
  *
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package  ErickJMenezes\FancyHttp\Utils
- * @template T
  */
-class AMProxy implements \JsonSerializable, \ArrayAccess, \Iterator
+class AMProxy implements JsonSerializable, ArrayAccess, Iterator
 {
+    /**
+     * @var array<string, string>
+     */
     protected array $keyMap = [];
 
-    private function __construct(protected array $data)
+    /**
+     * AMProxy constructor.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function __construct(protected array $data)
     {
-        foreach ($data as $key => $value)
+        foreach (array_keys($this->data) as $key)
             $this->keyMap[$this->sanitizeKey($key)] = $key;
     }
 
@@ -27,30 +40,10 @@ class AMProxy implements \JsonSerializable, \ArrayAccess, \Iterator
     }
 
     /**
-     * @param \ReflectionClass<T> $interface
-     * @param array               $data
-     * @return T
-     * @throws \ReflectionException
+     * @param string $name
+     * @param array  $arguments
+     * @return mixed|void
      */
-    public static function make(\ReflectionClass $interface, array $data)
-    {
-        return static::makeMany($interface, [$data])[0];
-    }
-
-    /**
-     * @param \ReflectionClass<T> $interface
-     * @param array[]             $data
-     * @return array<T>
-     * @throws \ReflectionException
-     */
-    public static function makeMany(\ReflectionClass $interface, array $data): array
-    {
-        $implementer = new Implementer($interface);
-        $list = [];
-        foreach ($data as $item) $list[] = $implementer->make(new static($item));
-        return $list;
-    }
-
     public function __call(string $name, array $arguments)
     {
         $sanitizedName = $this->sanitizeKey($name);
@@ -60,16 +53,16 @@ class AMProxy implements \JsonSerializable, \ArrayAccess, \Iterator
         } elseif (str_starts_with($sanitizedName, 'set')) {
             $this->set(substr($sanitizedName, 3), $arguments[0]);
         } else {
-            throw new \BadMethodCallException("The method {$name} is not legal for AutoMapped interfaces.");
+            throw new BadMethodCallException("The method {$name} is not legal for AutoMapped interfaces.");
         }
     }
 
-    private function get(string $key)
+    private function get(string $key): mixed
     {
         return $this->data[$this->keyMap[$key]];
     }
 
-    private function set(string $key, $value): void
+    private function set(string $key, mixed $value): void
     {
         $this->data[$this->keyMap[$key]] = $value;
     }
@@ -79,19 +72,27 @@ class AMProxy implements \JsonSerializable, \ArrayAccess, \Iterator
         return $this->data[$name];
     }
 
-    public function __set(string $name, $value): void
+    public function __set(string $name, mixed $value): void
     {
         $this->data[$name] = $value;
     }
 
+    /**
+     * @param int $options
+     * @return string
+     * @noinspection PhpMissingReturnTypeInspection
+     */
     public function toJson($options = 0)
     {
-        return json_encode($this->toArray(), $options);
+        return (string)json_encode($this->toArray(), $options);
     }
 
+    /**
+     * @return array
+     */
     public function toArray()
     {
-        return $this->jsonSerialize();
+        return (array)$this->jsonSerialize();
     }
 
     public function jsonSerialize()
@@ -134,7 +135,7 @@ class AMProxy implements \JsonSerializable, \ArrayAccess, \Iterator
         try {
             $this->current();
             return true;
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return false;
         }
     }

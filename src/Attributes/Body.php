@@ -2,10 +2,11 @@
 
 namespace ErickJMenezes\FancyHttp\Attributes;
 
+use Attribute;
 use ErickJMenezes\FancyHttp\Traits\ExpectsArray;
 use GuzzleHttp\RequestOptions;
 
-#[\Attribute(\Attribute::TARGET_PARAMETER)]
+#[Attribute(Attribute::TARGET_PARAMETER)]
 class Body extends AbstractParameterAttribute
 {
     use ExpectsArray;

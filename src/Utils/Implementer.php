@@ -4,29 +4,40 @@
 namespace ErickJMenezes\FancyHttp\Utils;
 
 
+use Closure;
+use ReflectionClass;
+
 /**
- * Class ClassGenerator
+ * Class Implementer
  *
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package  ErickJMenezes\FancyHttp\Utils
- * @template T
+ * @template T as object
  */
 class Implementer
 {
+    /**
+     * @var array<class-string, \Closure>
+     */
     protected static array $cache;
-    protected \Closure $factory;
+
+    protected Closure $factory;
 
     /**
-     * ClassGenerator constructor.
+     * Implementer constructor.
      *
-     * @param \ReflectionClass $interface
+     * @param \ReflectionClass<T> $interface
+     * @throws \Exception
      */
-    public function __construct(protected \ReflectionClass $interface)
+    public function __construct(protected ReflectionClass $interface)
     {
-        $this->factory = static::$cache[$this->interface->getName()] ??= $this->generateAnonymousImplementationFactory();
+        $this->factory = static::$cache[$this->interface->getName()] ??= $this->generateFactory();
     }
 
-    protected function generateAnonymousImplementationFactory(): \Closure
+    /**
+     * @throws \Exception
+     */
+    protected function generateFactory(): Closure
     {
         return eval(sprintf('return function ($parent) {
             return new class ($parent) implements %s {
@@ -44,90 +55,23 @@ class Implementer
     /**
      * Generates the interface methods
      *
-     * @throws \ReflectionException
      * @throws \Exception
      */
     protected function generateMethods(): string
     {
         $methods = '';
         foreach ($this->interface->getMethods() as $method) {
-            $method->isStatic()
-            && throw new \Exception("Static methods are not allowed, please remove the method \"{$method->getName()}\".");
-            $parameterList = [];
-            foreach ($method->getParameters() as $parameter) {
-                ($parameter->isVariadic() || $parameter->isPassedByReference())
-                && throw new \Exception("Variadic or passed by reference parameters are forbidden. Please fix the method \"{$method->getName()}\".");
-                $paramType = $this->getParameterType($parameter);
-                $argName = $parameter->getName();
-                $defaultValue = $this->getParameterDefaultValue($parameter);
-                $parameterList[] = "{$paramType} \${$argName}{$defaultValue}";
-            }
-            $parameterList = join(',', $parameterList);
-            $returnTypeName = $method->hasReturnType() ? $this->getTypeName($method->getReturnType()) : '';
-            $showReturnType = $method->hasReturnType() ? ': ' . $returnTypeName : $returnTypeName;
-            $returnStatement = $returnTypeName === 'void' ? '' : 'return ';
-            $methods .= "public function {$method->getName()}({$parameterList}){$showReturnType} 
-            {{$returnStatement}\$this->callParent(\"{$method->getName()}\", func_get_args());}";
+            $m = new MethodGenerator($method);
+            $methods .= $m;
         }
         return $methods;
     }
 
     /**
-     * @param \ReflectionParameter $parameter
-     * @return string
-     * @throws \Exception
-     */
-    protected function getParameterType(\ReflectionParameter $parameter): string
-    {
-        $name = '';
-        if ($parameter->hasType()) {
-            $parameterType = $parameter->getType();
-            $this->checkIsUnionType($parameterType);
-            $name = $this->getTypeName($parameterType);
-        }
-        return $name;
-    }
-
-    /**
-     * @param \ReflectionType|null $parameterType
-     * @throws \Exception
-     */
-    protected function checkIsUnionType(?\ReflectionType $parameterType): void
-    {
-        $parameterType instanceof \ReflectionUnionType &&
-        throw new \Exception("Union types are not allowed.");
-    }
-
-    protected function getTypeName(\ReflectionType $reflectionType): string
-    {
-        if ($this->classOrInterfaceExists($reflectionType)) {
-            return "\\{$reflectionType->getName()}";
-        }
-        return $reflectionType->getName();
-    }
-
-    protected function classOrInterfaceExists(\ReflectionNamedType $reflectionType): bool
-    {
-        $name = "\\{$reflectionType->getName()}";
-        return class_exists($name, true) || interface_exists($name, true);
-    }
-
-    protected function getParameterDefaultValue(\ReflectionParameter $parameter): string
-    {
-        $defaultValue = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : $this;
-        if ($defaultValue instanceof $this) {
-            return '';
-        } elseif (is_string($defaultValue)) {
-            return "=\"{$defaultValue}\"";
-        }
-        return '=' . var_export($defaultValue, true);
-    }
-
-    /**
-     * @param $parent
+     * @param object $parent
      * @return T
      */
-    public function make($parent)
+    public function make(object $parent): mixed
     {
         return $this->factory->call($this, $parent);
     }

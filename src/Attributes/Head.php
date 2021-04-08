@@ -3,8 +3,13 @@
 namespace ErickJMenezes\FancyHttp\Attributes;
 
 
-#[\Attribute(\Attribute::TARGET_METHOD)]
+use Attribute;
+
+#[Attribute(Attribute::TARGET_METHOD)]
 class Head extends AbstractHttpMethod
 {
-    public const METHOD = 'head';
+    public static function method(): string
+    {
+        return 'HEAD';
+    }
 }
