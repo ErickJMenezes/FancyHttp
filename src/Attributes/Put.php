@@ -4,8 +4,13 @@
 namespace ErickJMenezes\FancyHttp\Attributes;
 
 
-#[\Attribute(\Attribute::TARGET_METHOD)]
+use Attribute;
+
+#[Attribute(Attribute::TARGET_METHOD)]
 class Put extends AbstractHttpMethod
 {
-    public const METHOD = 'put';
+    public static function method(): string
+    {
+        return 'PUT';
+    }
 }

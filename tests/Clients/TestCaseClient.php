@@ -7,6 +7,7 @@ use ErickJMenezes\FancyHttp\Attributes\Delete;
 use ErickJMenezes\FancyHttp\Attributes\Get;
 use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
 use ErickJMenezes\FancyHttp\Attributes\Headers;
+use ErickJMenezes\FancyHttp\Attributes\Json;
 use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\Patch;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
@@ -41,18 +42,18 @@ interface TestCaseClient
     public function getTodoByIdSuppressed(#[PathParam('id')] int $id): ResponseInterface;
 
     #[Post('todos')]
-    public function createTodo(#[Body(Body::JSON)] array $body): array;
+    public function createTodo(#[Json] array $body): array;
 
     #[Patch('todos/{id}')]
     public function updateTodo(
         #[PathParam('id')] int $id,
-        #[Body(Body::JSON)] array $body
+        #[Json] array $body
     ): array;
 
     #[Put('todos/{id}')]
     public function replaceTodo(
         #[PathParam('id')] int $id,
-        #[Body(Body::JSON)] array $body
+        #[Json] array $body
     ): array;
 
     #[Delete('todos/{id}')]
@@ -96,6 +97,9 @@ interface TestCaseClient
     #[Get('todos/{id}')]
     public function getTodoByIdMapped(#[PathParam('id')] int $id): TodoInterface;
 
+    /**
+     * @return array<\Tests\Clients\TodoInterface>
+     */
     #[Get('todos')]
     #[ReturnsMappedList(TodoInterface::class)]
     public function getTodosMapped(): array;

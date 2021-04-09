@@ -2,10 +2,9 @@
 
 namespace Tests;
 
-use ErickJMenezes\FancyHttp\Client;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
-use Tests\Clients\TestCaseClient;
+use Tests\Clients\ClientSetup;
 
 
 /**
@@ -16,121 +15,72 @@ use Tests\Clients\TestCaseClient;
  */
 class CastingTypesTest extends TestCase
 {
-    public function testCreatingInstance(): TestCaseClient
-    {
-        $instance = Client::createFromInterface(TestCaseClient::class, 'https://jsonplaceholder.typicode.com/');
-        $this->assertTrue($instance instanceof TestCaseClient, 'instance not created');
-        return $instance;
-    }
+    use ClientSetup;
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testArray(TestCaseClient $client)
+    public function testArray()
     {
-        $response = $client->getTodoByIdArray(1);
+        $response = $this->client->getTodoByIdArray(1);
         $this->assertIsArray($response, 'Response is not array');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testObject(TestCaseClient $client)
+    public function testObject()
     {
-        $response = $client->getTodoByIdObject(1);
+        $response = $this->client->getTodoByIdObject(1);
         $this->assertIsObject($response, 'Response is not object');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testResponseInterface(TestCaseClient $client)
+    public function testResponseInterface()
     {
-        $response = $client->getTodoByIdResponseInterface(1);
+        $response = $this->client->getTodoByIdResponseInterface(1);
         $this->assertTrue($response instanceof ResponseInterface, 'Response is not ResponseInterface');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testVoid(TestCaseClient $client)
+    public function testVoid()
     {
-        $response = $client->getTodoByIdVoid(1);
+        $response = $this->client->getTodoByIdVoid(1);
         $this->assertTrue(is_null($response), 'Response is not void');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testString(TestCaseClient $client)
+    public function testString()
     {
-        $response = $client->getTodoByIdString(1);
+        $response = $this->client->getTodoByIdString(1);
         $this->assertIsString($response, 'Response is not string');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testBoolean(TestCaseClient $client)
+    public function testBoolean()
     {
-        $response = $client->getTodoByIdBoolean(1);
+        $response = $this->client->getTodoByIdBoolean(1);
         $this->assertIsBool($response, 'Response is not boolean');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testMixed(TestCaseClient $client)
+    public function testMixed()
     {
-        $response = $client->getTodoByIdMixed(1);
+        $response = $this->client->getTodoByIdMixed(1);
         $this->assertTrue($response instanceof ResponseInterface, 'Response is not ResponseInterface (mixed)');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testNone(TestCaseClient $client)
+    public function testNone()
     {
-        $response = $client->getTodoByIdNone(1);
+        $response = $this->client->getTodoByIdNone(1);
         $this->assertTrue($response instanceof ResponseInterface, 'Response is not ResponseInterface (none)');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testCastable(TestCaseClient $client)
+    public function testCastable()
     {
-        $response = $client->getTodoByIdCastable(1);
-        self::assertTrue(true, 'Something goes wrong');
+        $response = $this->client->getTodoByIdCastable(1);
+        self::assertTrue(true);
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testModelInterface(TestCaseClient $client)
+    public function testModelInterface()
     {
-        $todo = $client->getTodoByIdMapped(1);
+        $todo = $this->client->getTodoByIdMapped(1);
         $todo->setTitle('testing-auto-mapped');
         self::assertTrue($todo->getTitle() === 'testing-auto-mapped', 'Something goes wrong');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testGetTodosMapped(TestCaseClient $client)
+    public function testGetTodosMapped()
     {
-        $todos = $client->getTodosMapped();
+        $todos = $this->client->getTodosMapped();
         foreach ($todos as $todo)
             self::assertTrue($todo instanceof \Tests\Clients\TodoInterface, 'Something goes wrong');
     }

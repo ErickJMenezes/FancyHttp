@@ -4,8 +4,13 @@
 namespace ErickJMenezes\FancyHttp\Attributes;
 
 
-#[\Attribute(\Attribute::TARGET_METHOD)]
+use Attribute;
+
+#[Attribute(Attribute::TARGET_METHOD)]
 class Post extends AbstractHttpMethod
 {
-    public const METHOD = 'post';
+    public static function method(): string
+    {
+        return 'POST';
+    }
 }

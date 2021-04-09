@@ -4,9 +4,8 @@
 namespace Tests;
 
 
-use ErickJMenezes\FancyHttp\Client;
 use PHPUnit\Framework\TestCase;
-use Tests\Clients\TestCaseClient;
+use Tests\Clients\ClientSetup;
 
 /**
  * Class AttributeTypeExpectationsTest
@@ -17,60 +16,35 @@ use Tests\Clients\TestCaseClient;
  */
 class AttributeTypeExpectationsTest extends TestCase
 {
-    public function testCreatingInstance(): TestCaseClient
-    {
-        $instance = Client::createFromInterface(TestCaseClient::class, 'https://jsonplaceholder.typicode.com/');
-        $this->assertTrue($instance instanceof TestCaseClient, 'instance not created');
-        return $instance;
-    }
+    use ClientSetup;
 
-    /**
-     * @depends testCreatingInstance
-     * @param \Tests\Clients\TestCaseClient $client
-     */
-    public function testPathParam(TestCaseClient $client): void
+    public function testPathParam(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $client->invalidPathParam([]);
+        $this->client->invalidPathParam([]);
     }
 
-    /**
-     * @depends testCreatingInstance
-     * @param \Tests\Clients\TestCaseClient $client
-     */
-    public function testQueryParams(TestCaseClient $client): void
+    public function testQueryParams(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $client->invalidQueryParams(1);
+        $this->client->invalidQueryParams(1);
     }
 
-    /**
-     * @depends testCreatingInstance
-     * @param \Tests\Clients\TestCaseClient $client
-     */
-    public function testHeaders(TestCaseClient $client): void
+    public function testHeaders(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $client->invalidHeaders(1, '');
+        $this->client->invalidHeaders(1, '');
     }
 
-    /**
-     * @depends testCreatingInstance
-     * @param \Tests\Clients\TestCaseClient $client
-     */
-    public function testHeaderParams(TestCaseClient $client): void
+    public function testHeaderParams(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $client->invalidHeaderParam(1, []);
+        $this->client->invalidHeaderParam(1, []);
     }
 
-    /**
-     * @depends testCreatingInstance
-     * @param \Tests\Clients\TestCaseClient $client
-     */
-    public function testMultipart(TestCaseClient $client): void
+    public function testMultipart(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $client->invalidMultipart(1);
+        $this->client->invalidMultipart(1);
     }
 }

@@ -4,8 +4,13 @@
 namespace ErickJMenezes\FancyHttp\Attributes;
 
 
-#[\Attribute(\Attribute::TARGET_METHOD)]
+use Attribute;
+
+#[Attribute(Attribute::TARGET_METHOD)]
 class Patch extends AbstractHttpMethod
 {
-    public const METHOD = 'patch';
+    public static function method(): string
+    {
+        return 'PATCH';
+    }
 }
