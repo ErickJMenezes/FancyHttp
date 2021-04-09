@@ -3,9 +3,8 @@
 
 namespace Tests;
 
-use ErickJMenezes\FancyHttp\Client;
 use PHPUnit\Framework\TestCase;
-use Tests\Clients\TestCaseClient;
+use Tests\Clients\ClientSetup;
 
 /**
  * Class VerbsAndSomeParametersTest
@@ -15,53 +14,32 @@ use Tests\Clients\TestCaseClient;
  */
 class SimpleCrudTest extends TestCase
 {
-    public function testCreatingInstance(): TestCaseClient
-    {
-        $instance = Client::createFromInterface(TestCaseClient::class, 'https://jsonplaceholder.typicode.com/');
-        $this->assertTrue($instance instanceof TestCaseClient, 'instance not created');
-        return $instance;
-    }
+    use ClientSetup;
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testGetTodos(TestCaseClient $client)
+    public function testGetTodos()
     {
-        $response = $client->getTodos();
+        $response = $this->client->getTodos();
         $user = $response[0];
         $this->assertArrayHasKey('id', $user);
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testGetTodoById(TestCaseClient $client)
+    public function testGetTodoById()
     {
-        $response = $client->getTodoById(1);
+        $response = $this->client->getTodoById(1);
         self::assertArrayHasKey('id', $response, 'Todo must have an id');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testGetTodoByIdStringable(TestCaseClient $client)
+    public function testGetTodoByIdStringable()
     {
-        $response = $client->getTodoByIdStringableParam(new class implements \Stringable {
+        $response = $this->client->getTodoByIdStringableParam(new class implements \Stringable {
             public function __toString(): string {return '1';}
         });
         self::assertTrue($response);
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testCreateTodo(TestCaseClient $client)
+    public function testCreateTodo()
     {
-        $response = $client->createTodo([
+        $response = $this->client->createTodo([
             'userId' => 1,
             'title' => 'test case',
             'completed' => true
@@ -72,61 +50,41 @@ class SimpleCrudTest extends TestCase
         $this->assertArrayHasKey('title', $response, 'Response must have a title');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testUpdateTodo(TestCaseClient $client)
+    public function testUpdateTodo()
     {
-        $response = $client->getTodoById(1);
+        $response = $this->client->getTodoById(1);
         $this->assertArrayHasKey('id', $response, 'Todo must have an id');
         $response['title'] = 'testCase';
-        $updatedResponse = $client->updateTodo(1, $response);
+        $updatedResponse = $this->client->updateTodo(1, $response);
         self::assertTrue($updatedResponse['title'] === $response['title'], 'Response is not updated');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testDeleteTodo(TestCaseClient $client)
+    public function testDeleteTodo()
     {
-        $response = $client->deleteTodo(1);
+        $response = $this->client->deleteTodo(1);
         self::assertTrue($response, 'Todo not deleted');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testFilterTodosWithQueryString(TestCaseClient $client)
+    public function testFilterTodosWithQueryString()
     {
-        $response = $client->getTodos(['id' => 1]);
+        $response = $this->client->getTodos(['id' => 1]);
         self::assertTrue(count($response) === 1, 'Response is not filtered');
         $user = $response[0];
         $this->assertArrayHasKey('id', $user, 'Response is invalid');
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testQueryParamPlusQueryStringParameters(TestCaseClient $client)
+    public function testQueryParamPlusQueryStringParameters()
     {
-        $response = $client->getUserTodos(1, ['id' => 3]);
+        $response = $this->client->getUserTodos(1, ['id' => 3]);
         self::assertTrue(count($response) === 1, 'Response must have a size of 1');
         self::assertTrue($response[0]['id'] === 3, 'TodoId is incorrect.');
         self::assertTrue($response[0]['userId'] === 1, 'UserId is incorrect.');
     }
 
-    /**
-     * @depends testCreatingInstance
-     * @param \Tests\Clients\TestCaseClient $client
-     */
-    public function testSuppressedError(TestCaseClient $client)
+    public function testSuppressedError()
     {
-        $response = $client->getTodoByIdSuppressed(99999);
+        $response = $this->client->getTodoByIdSuppressed(99999);
         self::assertTrue($response->getStatusCode() === 404);
-        self::assertTrue($client->lastResponse->getStatusCode() === 404);
+        self::assertTrue($this->client->lastResponse->getStatusCode() === 404);
     }
 }

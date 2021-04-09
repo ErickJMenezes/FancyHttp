@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Utils;
+namespace ErickJMenezes\FancyHttp\Lib;
 
 use Exception;
 use ReflectionMethod;

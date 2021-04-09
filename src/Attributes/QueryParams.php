@@ -4,6 +4,7 @@
 namespace ErickJMenezes\FancyHttp\Attributes;
 
 use Attribute;
+use ErickJMenezes\FancyHttp\Contracts\ParameterAttribute;
 use ErickJMenezes\FancyHttp\Traits\ExpectsArray;
 
 /**
@@ -15,7 +16,7 @@ use ErickJMenezes\FancyHttp\Traits\ExpectsArray;
  * @package ErickJMenezes\FancyHttp\Attributes
  */
 #[Attribute(Attribute::TARGET_PARAMETER)]
-class QueryParams extends AbstractParameterAttribute
+class QueryParams implements ParameterAttribute
 {
     use ExpectsArray;
 }

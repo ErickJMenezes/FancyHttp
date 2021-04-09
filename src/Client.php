@@ -5,9 +5,9 @@ namespace ErickJMenezes\FancyHttp;
 
 
 use BadMethodCallException;
-use ErickJMenezes\FancyHttp\Utils\Implementer;
-use ErickJMenezes\FancyHttp\Utils\Method;
-use ErickJMenezes\FancyHttp\Utils\Parameters;
+use ErickJMenezes\FancyHttp\Lib\Implementer;
+use ErickJMenezes\FancyHttp\Lib\Method;
+use ErickJMenezes\FancyHttp\Lib\Parameters;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
 use InvalidArgumentException;
@@ -21,7 +21,7 @@ use ReflectionException;
  *
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package  ErickJMenezes\FancyHttp
- * @template T as object
+ * @template T of object
  */
 class Client
 {

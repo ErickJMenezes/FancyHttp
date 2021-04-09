@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Utils;
+namespace ErickJMenezes\FancyHttp\Lib;
 
 
 use Closure;
@@ -11,7 +11,7 @@ use ReflectionClass;
  * Class Implementer
  *
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package  ErickJMenezes\FancyHttp\Utils
+ * @package  ErickJMenezesFancyHttp\Lib
  * @template T as object
  */
 class Implementer

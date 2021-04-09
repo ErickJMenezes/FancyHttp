@@ -2,9 +2,8 @@
 
 namespace Tests;
 
-use ErickJMenezes\FancyHttp\Client;
 use PHPUnit\Framework\TestCase;
-use Tests\Clients\TestCaseClient;
+use Tests\Clients\ClientSetup;
 
 /**
  * Class VerbsAndSomeParametersTest
@@ -14,40 +13,23 @@ use Tests\Clients\TestCaseClient;
  */
 class TestAutoMapped extends TestCase
 {
-    public function testCreatingInstance(): TestCaseClient
-    {
-        $instance = Client::createFromInterface(TestCaseClient::class, 'https://jsonplaceholder.typicode.com/');
-        $this->assertTrue($instance instanceof TestCaseClient, 'instance not created');
-        return $instance;
-    }
+    use ClientSetup;
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testAccessors(TestCaseClient $client)
+    public function testAccessors()
     {
-        $todo = $client->getTodoByIdMapped(1);
+        $todo = $this->client->getTodoByIdMapped(1);
         self::assertTrue(is_int($todo->id));
     }
 
-    /**
-     * @param \Tests\Clients\TestCaseClient $client
-     * @depends testCreatingInstance
-     */
-    public function testOffsets(TestCaseClient $client)
+    public function testOffsets()
     {
-        $todo = $client->getTodoByIdMapped(1);
+        $todo = $this->client->getTodoByIdMapped(1);
         self::assertTrue(is_int($todo['id']));
     }
 
-    /**
-     * @depends testCreatingInstance
-     * @param \Tests\Clients\TestCaseClient $client
-     */
-    public function testImplementingJsonSerializable(TestCaseClient $client)
+    public function testImplementingJsonSerializable()
     {
-        $todo = $client->getTodoByIdMapped(1);
+        $todo = $this->client->getTodoByIdMapped(1);
         $serialized = $todo->jsonSerialize();
         self::assertIsArray($serialized);
     }

@@ -1,13 +1,15 @@
 <?php
 
-namespace ErickJMenezes\FancyHttp\Attributes;
+
+namespace ErickJMenezes\FancyHttp\Attributes\Auth;
+
 
 use Attribute;
 use ErickJMenezes\FancyHttp\Contracts\ParameterAttribute;
 use ErickJMenezes\FancyHttp\Traits\ExpectsString;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
-class Body implements ParameterAttribute
+class Bearer implements ParameterAttribute
 {
     use ExpectsString;
 }

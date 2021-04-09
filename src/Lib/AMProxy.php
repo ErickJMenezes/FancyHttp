@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Utils;
+namespace ErickJMenezes\FancyHttp\Lib;
 
 
 use ArrayAccess;
@@ -14,9 +14,9 @@ use Throwable;
  * Class AutoMappedProxy
  *
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package  ErickJMenezes\FancyHttp\Utils
+ * @package  ErickJMenezesFancyHttp\Lib
  */
-class AMProxy implements JsonSerializable, ArrayAccess, Iterator
+class AMProxy implements JsonSerializable, ArrayAccess, Iterator, \Stringable
 {
     /**
      * @var array<string, string>
@@ -26,9 +26,13 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator
     /**
      * AMProxy constructor.
      *
-     * @param array<string, mixed> $data
+     * @param array                $data
+     * @param array<string,string> $map
      */
-    public function __construct(protected array $data)
+    public function __construct(
+        protected array $data,
+        protected array $map
+    )
     {
         foreach (array_keys($this->data) as $key)
             $this->keyMap[$this->sanitizeKey($key)] = $key;
@@ -46,35 +50,60 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator
      */
     public function __call(string $name, array $arguments)
     {
-        $sanitizedName = $this->sanitizeKey($name);
-
-        if (str_starts_with($sanitizedName, 'get')) {
-            return $this->get(substr($sanitizedName, 3));
-        } elseif (str_starts_with($sanitizedName, 'set')) {
-            $this->set(substr($sanitizedName, 3), $arguments[0]);
+        if (str_starts_with($name, 'get')) {
+            if (isset($this->map[$name])) return $this->dataGet($this->map[$name]);
+            $sanitizedName = substr($this->sanitizeKey($name), 3);
+            return $this->data[$this->keyMap[$sanitizedName]];
+        } elseif (str_starts_with($name, 'set')) {
+            $mappedKey = str_replace('set', 'get', $name);
+            if (isset($this->map[$mappedKey])) {
+                $this->dataSet($this->map[$mappedKey], $arguments[0]);
+            } else {
+                $sanitizedName = substr($this->sanitizeKey($name), 3);
+                $this->data[$this->keyMap[$sanitizedName]] = $arguments[0];
+            }
         } else {
             throw new BadMethodCallException("The method {$name} is not legal for AutoMapped interfaces.");
         }
     }
 
-    private function get(string $key): mixed
+    public function dataGet(string $path): mixed
     {
-        return $this->data[$this->keyMap[$key]];
+        $propNames = explode('.', $path);
+        $nested = $this->data;
+        foreach ($propNames as $propName) {
+            $nested = $nested[$propName] ?? trigger_error(
+                    "The property path {$path} is invalid. The nested property {$propName} doesn't exists in the data set.",
+                    E_USER_ERROR
+                );
+        }
+        return $nested;
     }
 
-    private function set(string $key, mixed $value): void
+    public function dataSet(string $path, mixed $value): void
     {
-        $this->data[$this->keyMap[$key]] = $value;
+        $propNames = explode('.', $path);
+        $paths = array_slice($propNames, 0, -1);
+        $nested = &$this->data;
+        foreach ($paths as $propName) {
+            if (is_array($nested[$propName])) $nested = &$nested[$propName];
+            else trigger_error(
+                "The property path {$path} is invalid. The nested property {$propName} doesn't exists in the data set.",
+                E_USER_ERROR
+            );
+        }
+        $target = array_slice($propNames, -1)[0];
+        $nested[$target] = $value;
     }
 
     public function __get(string $name)
     {
-        return $this->data[$name];
+        return $this->dataGet($name);
     }
 
     public function __set(string $name, mixed $value): void
     {
-        $this->data[$name] = $value;
+        $this->dataSet($name, $value);
     }
 
     /**
@@ -148,5 +177,10 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator
     public function rewind()
     {
         reset($this->data);
+    }
+
+    public function __toString()
+    {
+        return json_encode($this);
     }
 }

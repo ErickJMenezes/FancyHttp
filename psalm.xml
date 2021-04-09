@@ -10,6 +10,8 @@
         <directory name="." />
         <ignoreFiles>
             <directory name="vendor" />
+            <directory name="documentation" />
+            <directory name=".phpunit.cache" />
         </ignoreFiles>
     </projectFiles>
 </psalm>

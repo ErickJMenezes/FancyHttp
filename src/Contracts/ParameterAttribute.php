@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Attributes;
+namespace ErickJMenezes\FancyHttp\Contracts;
 
 /**
  * Class AbstractParameterAttribute
@@ -9,11 +9,11 @@ namespace ErickJMenezes\FancyHttp\Attributes;
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package ErickJMenezes\FancyHttp\Attributes
  */
-abstract class AbstractParameterAttribute
+interface ParameterAttribute
 {
     /**
      * @param mixed $value
      * @throws \InvalidArgumentException
      */
-    abstract public function check(mixed $value): void;
+    public function check(mixed $value): void;
 }

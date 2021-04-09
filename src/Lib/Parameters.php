@@ -1,16 +1,22 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Utils;
+namespace ErickJMenezes\FancyHttp\Lib;
 
 
+use ErickJMenezes\FancyHttp\Attributes\Auth\Basic;
+use ErickJMenezes\FancyHttp\Attributes\Auth\Bearer;
+use ErickJMenezes\FancyHttp\Attributes\Auth\Digest;
+use ErickJMenezes\FancyHttp\Attributes\Auth\Ntml;
 use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\FormParams;
 use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
 use ErickJMenezes\FancyHttp\Attributes\Headers;
+use ErickJMenezes\FancyHttp\Attributes\Json;
 use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\QueryParams;
+use ErickJMenezes\FancyHttp\Traits\Concerns\InteractsWithAttributes;
 use Exception;
 use InvalidArgumentException;
 use ReflectionParameter;
@@ -19,18 +25,25 @@ use ReflectionParameter;
  * Class Parameters
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Utils
+ * @package ErickJMenezes\FancyHttp\Lib
  */
 class Parameters
 {
+    use InteractsWithAttributes;
+
+    /**
+     * @var array<string,mixed>
+     */
     protected array $argsNameMap = [];
+
+    /**
+     * @var array<int,mixed>
+     */
     protected array $argsPositionMap = [];
 
     /**
-     * MethodArguments constructor.
-     *
-     * @param \ReflectionParameter[] $reflectionParameters
-     * @param array                  $arguments
+     * @param array<ReflectionParameter> $reflectionParameters
+     * @param array                      $arguments
      */
     public function __construct(
         protected array $reflectionParameters,
@@ -43,7 +56,6 @@ class Parameters
     protected function loadParameters(): void
     {
         foreach ($this->reflectionParameters as $parameter) {
-            $this->argsNameMap[$parameter->getName()] =
             $this->argsPositionMap[$parameter->getPosition()] =
                 // Load by name or by position
                 $this->arguments[$parameter->getName()] ??
@@ -61,34 +73,33 @@ class Parameters
 
     public function getQueryParameters(): array
     {
-        return $this->getAllArrayParamsOfAttributeType(QueryParams::class);
+        return $this->getAllArrayAttributeValues(QueryParams::class);
     }
 
     /**
      * @param class-string $attribute
      * @return array
      */
-    protected function getAllArrayParamsOfAttributeType(string $attribute): array
+    protected function getAllArrayAttributeValues(string $attribute): array
     {
         $data = [];
         $params = $this->getWhereHasAttribute($attribute);
         array_walk($params, function (ReflectionParameter $parameter) use (&$data) {
-            $value = $this->getByName($parameter->getName());
-            $data += $value;
+            $data += $this->getByIndex($parameter->getPosition());
         });
         return $data;
     }
 
     /**
-     * @param class-string<TAttr> $attribute
+     * @param class-string<T> $attribute
      * @return array<int,ReflectionParameter>
-     * @template TAttr of \ErickJMenezes\FancyHttp\Attributes\AbstractParameterAttribute
+     * @template T of \ErickJMenezes\FancyHttp\Contracts\ParameterAttribute
      */
     public function getWhereHasAttribute(string $attribute): array
     {
         $parameters = array_values(array_filter(
             $this->reflectionParameters,
-            fn(ReflectionParameter $param) => !empty($param->getAttributes($attribute))
+            fn(ReflectionParameter $param) => $this->hasAttribute($param, $attribute)
         ));
         $this->checkAttributeExpectations($parameters, $attribute);
         return $parameters;
@@ -96,74 +107,108 @@ class Parameters
 
     /**
      * @param array<\ReflectionParameter> $params
-     * @param class-string<TAttr>         $attribute
+     * @param class-string<T>             $attribute
      * @return void
-     * @template TAttr of \ErickJMenezes\FancyHttp\Attributes\AbstractParameterAttribute
+     * @template T of \ErickJMenezes\FancyHttp\Contracts\ParameterAttribute
      */
     protected function checkAttributeExpectations(array $params, string $attribute): void
     {
         foreach ($params as $parameter)
             /**
-             * @var \ReflectionAttribute<TAttr> $reflectionAttribute
+             * @var \ReflectionAttribute<T> $reflectionAttribute
              * @noinspection PhpRedundantVariableDocTypeInspection
              */
             foreach ($parameter->getAttributes($attribute) as $reflectionAttribute)
                 $reflectionAttribute->newInstance()
-                    ->check($this->getByName($parameter->getName()));
-    }
-
-    public function getByName(string $name): mixed
-    {
-        return $this->argsNameMap[$name];
+                    ->check($this->getByIndex($parameter->getPosition()));
     }
 
     public function getHeaderParams(): array
     {
-        $headers = $this->getAllArrayParamsOfAttributeType(Headers::class);
+        $headers = $this->getFirstValueWhereHasAttribute(Headers::class) ?? [];
         $headerParams = $this->getWhereHasAttribute(HeaderParam::class);
         foreach ($headerParams as $headerParam) {
             /** @var HeaderParam $attribute */
             $attribute = $headerParam->getAttributes(HeaderParam::class)[0]->newInstance();
-            $headers[$attribute->headerName] = $this->getByName($headerParam->getName());
+            $headers[$attribute->headerName] = $this->getByIndex($headerParam->getPosition());
         }
-        return $headers;
+        return $headers + $this->getBearerParam();
     }
 
     public function getFormParams(): array
     {
-        return $this->getAllArrayParamsOfAttributeType(FormParams::class);
+        return $this->getAllArrayAttributeValues(FormParams::class);
     }
 
     public function getMultipartParams(): array
     {
-        return $this->getAllArrayParamsOfAttributeType(Multipart::class);
+        return $this->getAllArrayAttributeValues(Multipart::class);
+    }
+
+    /**
+     * @return array<string>|null
+     * @throws \Exception
+     */
+    public function getAuthParams(): ?array
+    {
+        return $this->getFirstValueWhereHasAttribute(Basic::class) ?:
+            $this->getFirstValueWhereHasAttribute(Digest::class) ?:
+                $this->getFirstValueWhereHasAttribute(Ntml::class);
+    }
+
+    public function getBearerParam(): array
+    {
+        $token = $this->getFirstValueWhereHasAttribute(Bearer::class);
+        if (is_null($token)) return [];
+        return ['Authorization' => "Bearer {$token}"];
+    }
+
+    /**
+     * @template T of \ErickJMenezes\FancyHttp\Contracts\ParameterAttribute
+     * @param class-string<T> $attribute
+     * @param string          $error
+     * @return mixed
+     * @throws \Exception
+     */
+    protected function getFirstValueWhereHasAttribute(string $attribute): mixed
+    {
+        $param = $this->getWhereHasAttribute($attribute);
+        switch (count($param)) {
+            case 0:
+                return null;
+            case 1:
+                return $this->getByIndex($param[0]->getPosition());
+            default:
+                throw new Exception("Only one attribute of type {$attribute} are allowed");
+        }
+    }
+
+    protected function getByIndex(int $index): mixed
+    {
+        return $this->argsPositionMap[$index];
     }
 
     /**
      * @throws \Exception
      */
-    public function getBodyParam(): array
+    public function getBodyParam(): ?string
     {
-        $parametersWithBody = $this->getWhereHasAttribute(Body::class);
-        switch (count($parametersWithBody)) {
-            case 0:
-                return [Body::BODY, null];
-            case 1:
-                $parameter = $parametersWithBody[array_key_first($parametersWithBody)];
-                $bodyParam = $parameter->getAttributes(Body::class)[0];
-                $bodyType = $bodyParam->newInstance()->type;
-                $body = $this->getAllArrayParamsOfAttributeType(Body::class);
-                return [$bodyType, $body];
-            default:
-                throw new Exception("Only one body param are allowed.");
-        }
+        return $this->getFirstValueWhereHasAttribute(Body::class);
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function getJsonParam(): ?array
+    {
+        return $this->getFirstValueWhereHasAttribute(Json::class);
     }
 
     public function parsePath(string $path): string
     {
         $pathParameters = $this->getWhereHasAttribute(PathParam::class);
         foreach ($pathParameters as $pathParameter) {
-            $value = $this->getByName($pathParameter->getName());
+            $value = $this->getByIndex($pathParameter->getPosition());
             $pathPlaceholder = $pathParameter->getAttributes(PathParam::class)[0]->newInstance()->paramName;
             $count = 0;
             $path = str_replace('{' . $pathPlaceholder . '}', $value, $path, $count);
@@ -179,10 +224,5 @@ class Parameters
             throw new Exception("The path parameter \"{$name}\" has no replacement");
         }
         return $path;
-    }
-
-    protected function getByIndex(int $index): mixed
-    {
-        return $this->argsPositionMap[$index];
     }
 }

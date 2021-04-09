@@ -9,7 +9,7 @@ use Attribute;
 class ReturnsMappedList
 {
     public function __construct(
-        public string $autoMappedInterface
+        public string $interface
     )
     {
     }

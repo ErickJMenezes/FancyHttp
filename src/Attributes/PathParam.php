@@ -3,10 +3,11 @@
 namespace ErickJMenezes\FancyHttp\Attributes;
 
 use Attribute;
+use ErickJMenezes\FancyHttp\Contracts\ParameterAttribute;
 use ErickJMenezes\FancyHttp\Traits\ExpectsString;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
-class PathParam extends AbstractParameterAttribute
+class PathParam implements ParameterAttribute
 {
     use ExpectsString;
 
