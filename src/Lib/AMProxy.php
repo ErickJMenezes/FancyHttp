@@ -8,6 +8,8 @@ use ArrayAccess;
 use BadMethodCallException;
 use Iterator;
 use JsonSerializable;
+use RuntimeException;
+use Stringable;
 use Throwable;
 
 /**
@@ -15,8 +17,9 @@ use Throwable;
  *
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package  ErickJMenezesFancyHttp\Lib
+ * @internal
  */
-class AMProxy implements JsonSerializable, ArrayAccess, Iterator, \Stringable
+class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
 {
     /**
      * @var array<string, string>
@@ -51,46 +54,55 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, \Stringable
     public function __call(string $name, array $arguments)
     {
         if (str_starts_with($name, 'get')) {
-            if (isset($this->map[$name])) return $this->dataGet($this->map[$name]);
-            $sanitizedName = substr($this->sanitizeKey($name), 3);
-            return $this->data[$this->keyMap[$sanitizedName]];
+            if (isset($this->map[$name])) return $this->get($this->map[$name]);
+            return $this->getSetSanitized($name);
         } elseif (str_starts_with($name, 'set')) {
             $mappedKey = str_replace('set', 'get', $name);
             if (isset($this->map[$mappedKey])) {
-                $this->dataSet($this->map[$mappedKey], $arguments[0]);
+                $this->set($this->map[$mappedKey], $arguments[0]);
             } else {
-                $sanitizedName = substr($this->sanitizeKey($name), 3);
-                $this->data[$this->keyMap[$sanitizedName]] = $arguments[0];
+                $this->getSetSanitized($name, $arguments[0]);
             }
         } else {
             throw new BadMethodCallException("The method {$name} is not legal for AutoMapped interfaces.");
         }
     }
 
-    public function dataGet(string $path): mixed
+    public function get(string $path): mixed
     {
         $propNames = explode('.', $path);
         $nested = $this->data;
         foreach ($propNames as $propName) {
-            $nested = $nested[$propName] ?? trigger_error(
-                    "The property path {$path} is invalid. The nested property {$propName} doesn't exists in the data set.",
-                    E_USER_ERROR
-                );
+            if (!isset($nested[$propName])) $this->triggerError($path, $propName);
+            $nested = $nested[$propName];
         }
         return $nested;
     }
 
-    public function dataSet(string $path, mixed $value): void
+    private function triggerError(string $path, mixed $propName): void
+    {
+        throw new RuntimeException("The property path {$path} is invalid. The nested property {$propName} doesn't exists in the data set.");
+    }
+
+    protected function getSetSanitized(string $key, mixed $value = null): mixed
+    {
+        $sanitizedName = substr($this->sanitizeKey($key), 3);
+        $mappedKey = $this->keyMap[$sanitizedName];
+        if (func_num_args() === 1) {
+            return $this->data[$mappedKey];
+        } else {
+            return $this->data[$mappedKey] = $value;
+        }
+    }
+
+    public function set(string $path, mixed $value): void
     {
         $propNames = explode('.', $path);
         $paths = array_slice($propNames, 0, -1);
         $nested = &$this->data;
         foreach ($paths as $propName) {
             if (is_array($nested[$propName])) $nested = &$nested[$propName];
-            else trigger_error(
-                "The property path {$path} is invalid. The nested property {$propName} doesn't exists in the data set.",
-                E_USER_ERROR
-            );
+            else $this->triggerError($path, $propName);
         }
         $target = array_slice($propNames, -1)[0];
         $nested[$target] = $value;
@@ -98,22 +110,12 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, \Stringable
 
     public function __get(string $name)
     {
-        return $this->dataGet($name);
+        return $this->get($name);
     }
 
     public function __set(string $name, mixed $value): void
     {
-        $this->dataSet($name, $value);
-    }
-
-    /**
-     * @param int $options
-     * @return string
-     * @noinspection PhpMissingReturnTypeInspection
-     */
-    public function toJson($options = 0)
-    {
-        return (string)json_encode($this->toArray(), $options);
+        $this->set($name, $value);
     }
 
     /**
@@ -181,6 +183,16 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, \Stringable
 
     public function __toString()
     {
-        return json_encode($this);
+        return $this->toJson();
+    }
+
+    /**
+     * @param int $options
+     * @return string
+     * @noinspection PhpMissingReturnTypeInspection
+     */
+    public function toJson($options = 0)
+    {
+        return json_encode($this, $options);
     }
 }

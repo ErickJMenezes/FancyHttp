@@ -16,7 +16,7 @@ use ErickJMenezes\FancyHttp\Traits\ExpectsArray;
  * @package ErickJMenezes\FancyHttp\Attributes
  */
 #[Attribute(Attribute::TARGET_PARAMETER)]
-class QueryParams implements ParameterAttribute
+class Query implements ParameterAttribute
 {
     use ExpectsArray;
 }

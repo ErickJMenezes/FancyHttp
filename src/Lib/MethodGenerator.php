@@ -15,6 +15,7 @@ use Stringable;
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package ErickJMenezes\FancyHttp\Compilers
+ * @internal
  */
 class MethodGenerator implements Stringable
 {

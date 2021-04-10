@@ -6,6 +6,13 @@ namespace ErickJMenezes\FancyHttp\Traits;
 
 use InvalidArgumentException;
 
+/**
+ * Trait ExpectsArray
+ *
+ * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
+ * @package ErickJMenezes\FancyHttp\Traits
+ * @internal
+ */
 trait ExpectsArray
 {
     /**

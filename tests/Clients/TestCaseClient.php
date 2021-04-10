@@ -13,7 +13,7 @@ use ErickJMenezes\FancyHttp\Attributes\Patch;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Post;
 use ErickJMenezes\FancyHttp\Attributes\Put;
-use ErickJMenezes\FancyHttp\Attributes\QueryParams;
+use ErickJMenezes\FancyHttp\Attributes\Query;
 use ErickJMenezes\FancyHttp\Attributes\ReturnsMappedList;
 use ErickJMenezes\FancyHttp\Attributes\Suppress;
 use Psr\Http\Message\ResponseInterface;
@@ -29,7 +29,7 @@ use Psr\Http\Message\ResponseInterface;
 interface TestCaseClient
 {
     #[Get('todos')]
-    public function getTodos(#[QueryParams] array $query = []): array;
+    public function getTodos(#[Query] array $query = []): array;
 
     #[Get('todos/{id}')]
     public function getTodoById(#[PathParam('id')] int $id): array;
@@ -62,7 +62,7 @@ interface TestCaseClient
     #[Get('users/{id}/todos')]
     public function getUserTodos(
         #[PathParam('id')] int $id,
-        #[QueryParams] array $query = []
+        #[Query] array $query = []
     ): array;
 
     // Casting return types test.
@@ -115,7 +115,7 @@ interface TestCaseClient
 
     #[Get('todos')]
     public function invalidQueryParams(
-        #[QueryParams] int $query
+        #[Query] int $query
     ): int;
 
     #[Get('todos/{id}')]

@@ -34,11 +34,12 @@ class Client
      * Client constructor.
      *
      * @param class-string<T> $interfaceClass
-     * @param string          $baseUri
+     * @param string|null     $baseUri
+     * @throws \InvalidArgumentException
      */
     protected function __construct(
         string $interfaceClass,
-        protected string $baseUri
+        ?string $baseUri = null
     )
     {
         $invalidArgumentException = new InvalidArgumentException("The value \"{$interfaceClass}\" is not a valid fully qualified interface name.");
@@ -48,17 +49,17 @@ class Client
         } catch (ReflectionException) {
             throw $invalidArgumentException;
         }
-        $this->client = new GuzzleClient(['base_uri' => $this->baseUri]);
+        $this->client = new GuzzleClient(['base_uri' => $baseUri]);
     }
 
     /**
      * @param class-string<I> $interface
-     * @param string          $baseUri
+     * @param string|null     $baseUri
      * @return I
-     * @template I
+     * @template I of object
      * @throws \Exception
      */
-    public static function createFromInterface(string $interface, string $baseUri): mixed
+    public static function createFromInterface(string $interface, string $baseUri = null): object
     {
         return (new self($interface, $baseUri))->generate();
     }
@@ -97,9 +98,11 @@ class Client
     protected function callClientMethod(string $name, array $arguments): mixed
     {
         $reflectedMethod = $this->interface->getMethod($name);
-        $method = new Method($reflectedMethod, new Parameters($reflectedMethod->getParameters(), $arguments));
-        $response = $method->call($this->client);
-        $this->lastResponse = $method->getLastGuzzleResponse();
-        return $response;
+        $method = new Method(
+            $reflectedMethod,
+            new Parameters($reflectedMethod->getParameters(), $arguments),
+            $this
+        );
+        return $method->call($this->client);
     }
 }

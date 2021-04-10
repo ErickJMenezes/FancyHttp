@@ -13,6 +13,7 @@ use ReflectionClass;
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package  ErickJMenezesFancyHttp\Lib
  * @template T as object
+ * @internal
  */
 class Implementer
 {
@@ -36,6 +37,8 @@ class Implementer
 
     /**
      * @throws \Exception
+     * @psalm-suppress MixedReturnStatement
+     * @psalm-suppress MixedInferredReturnType
      */
     protected function generateFactory(): Closure
     {
@@ -70,6 +73,8 @@ class Implementer
     /**
      * @param object $parent
      * @return T
+     * @psalm-suppress MixedInferredReturnType
+     * @psalm-suppress MixedReturnStatement
      */
     public function make(object $parent): mixed
     {
