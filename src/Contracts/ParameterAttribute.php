@@ -8,6 +8,7 @@ namespace ErickJMenezes\FancyHttp\Contracts;
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package ErickJMenezes\FancyHttp\Attributes
+ * @internal
  */
 interface ParameterAttribute
 {

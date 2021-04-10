@@ -7,6 +7,13 @@ namespace ErickJMenezes\FancyHttp\Traits;
 use InvalidArgumentException;
 use Stringable;
 
+/**
+ * Trait ExpectsString
+ *
+ * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
+ * @package ErickJMenezes\FancyHttp\Traits
+ * @internal
+ */
 trait ExpectsString
 {
     public function check(mixed $value): void
