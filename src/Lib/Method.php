@@ -5,7 +5,7 @@ namespace ErickJMenezes\FancyHttp\Lib;
 
 use ArrayObject;
 use ErickJMenezes\FancyHttp\Castable;
-use ErickJMenezes\FancyHttp\Traits\Concerns\InteractsWithMethods;
+use ErickJMenezes\FancyHttp\Traits\InteractsWithMethods;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;

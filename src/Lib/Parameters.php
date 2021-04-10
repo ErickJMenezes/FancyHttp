@@ -17,7 +17,7 @@ use ErickJMenezes\FancyHttp\Attributes\Multipart;
 use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Query;
 use ErickJMenezes\FancyHttp\Attributes\QueryParam;
-use ErickJMenezes\FancyHttp\Traits\Concerns\InteractsWithParameters;
+use ErickJMenezes\FancyHttp\Traits\InteractsWithParameters;
 use Exception;
 
 

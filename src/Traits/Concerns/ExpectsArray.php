@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Traits;
+namespace ErickJMenezes\FancyHttp\Traits\Concerns;
 
 
 use InvalidArgumentException;
