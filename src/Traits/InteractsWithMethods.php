@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Traits\Concerns;
+namespace ErickJMenezes\FancyHttp\Traits;
 
 use BadMethodCallException;
 use ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod;
@@ -115,7 +115,7 @@ trait InteractsWithMethods
     /**
      * @return \ReflectionClass<I>
      * @throws \ReflectionException
-     * @template I
+     * @template I of object
      */
     protected function getAutoMappedInterface(): ReflectionClass
     {
@@ -125,7 +125,7 @@ trait InteractsWithMethods
     /**
      * @return ReflectionClass<I>
      * @throws \ReflectionException
-     * @template I
+     * @template I of object
      */
     protected function getMappedListInterface(): ReflectionClass
     {
