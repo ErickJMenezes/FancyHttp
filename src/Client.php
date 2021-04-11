@@ -33,13 +33,15 @@ class Client
     /**
      * Client constructor.
      *
-     * @param class-string<T> $interfaceClass
-     * @param string|null     $baseUri
+     * @param class-string<T>     $interfaceClass
+     * @param string|null         $baseUri
+     * @param array<string,mixed> $guzzleOptions
      * @throws \InvalidArgumentException
      */
     protected function __construct(
         string $interfaceClass,
-        ?string $baseUri = null
+        ?string $baseUri = null,
+        array $guzzleOptions = []
     )
     {
         $invalidArgumentException = new InvalidArgumentException("The value \"{$interfaceClass}\" is not a valid fully qualified interface name.");
@@ -49,19 +51,20 @@ class Client
         } catch (ReflectionException) {
             throw $invalidArgumentException;
         }
-        $this->client = new GuzzleClient(['base_uri' => $baseUri]);
+        $this->client = new GuzzleClient(['base_uri' => $baseUri] + $guzzleOptions);
     }
 
     /**
-     * @param class-string<I> $interface
-     * @param string|null     $baseUri
+     * @param class-string<I>     $interface
+     * @param string|null         $baseUri
+     * @param array<string,mixed> $guzzleOptions
      * @return I
      * @template I of object
      * @throws \Exception
      */
-    public static function createFromInterface(string $interface, string $baseUri = null): object
+    public static function createFromInterface(string $interface, string $baseUri = null, array $guzzleOptions = []): object
     {
-        return (new self($interface, $baseUri))->generate();
+        return (new self($interface, $baseUri, $guzzleOptions))->generate();
     }
 
     /**

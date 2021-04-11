@@ -163,12 +163,7 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
 
     public function valid()
     {
-        try {
-            $this->current();
-            return true;
-        } catch (Throwable) {
-            return false;
-        }
+        return !empty($this->current());
     }
 
     public function current()

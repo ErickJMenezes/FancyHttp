@@ -72,11 +72,12 @@ class Parameters
     }
 
     /**
-     * @return array
+     * @return array|null
+     * @throws \Exception
      */
-    public function getMultipartParams(): array
+    public function getMultipartParams(): ?array
     {
-        return $this->valuesFor(Multipart::class);
+        return $this->valueFor(Multipart::class);
     }
 
     /**
@@ -85,9 +86,14 @@ class Parameters
      */
     public function getAuthParams(): ?array
     {
-        return $this->valueFor(Basic::class) ?:
-            $this->valueFor(Digest::class) ?:
-                $this->valueFor(Ntml::class);
+        if ($value = $this->valueFor(Basic::class)) {
+            $value[] = 'basic';
+        } elseif ($value = $this->valueFor(Digest::class)) {
+            $value[] ='digest';
+        } elseif ($value = $this->valueFor(Ntml::class)) {
+            $value[] = 'ntml';
+        }
+        return $value;
     }
 
     /**

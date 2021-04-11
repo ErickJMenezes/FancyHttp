@@ -2,9 +2,11 @@
 
 namespace Tests;
 
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Tests\Clients\ClientSetup;
+use Tests\Clients\FooInterface;
 
 
 /**
@@ -17,71 +19,129 @@ class CastingTypesTest extends TestCase
 {
     use ClientSetup;
 
+    protected function prepareHandler(int $times = 1): void
+    {
+        for ($i = 0; $i < $times; $i++)
+            $this->handler->append(new Response(
+                headers: ['Content-Type' => 'application/json'],
+                body: json_encode(['foo' => 'bar'])
+            ));
+    }
+
     public function testArray()
     {
-        $response = $this->client->getTodoByIdArray(1);
-        $this->assertIsArray($response, 'Response is not array');
+        $this->prepareHandler();
+        $response = $this->client->castToArray();
+        $this->assertIsArray($response);
+        self::assertTrue($response['foo'] === 'bar');
     }
 
     public function testObject()
     {
-        $response = $this->client->getTodoByIdObject(1);
-        $this->assertIsObject($response, 'Response is not object');
-    }
-
-    public function testResponseInterface()
-    {
-        $response = $this->client->getTodoByIdResponseInterface(1);
-        $this->assertTrue($response instanceof ResponseInterface, 'Response is not ResponseInterface');
-    }
-
-    public function testVoid()
-    {
-        $response = $this->client->getTodoByIdVoid(1);
-        $this->assertTrue(is_null($response), 'Response is not void');
-    }
-
-    public function testString()
-    {
-        $response = $this->client->getTodoByIdString(1);
-        $this->assertIsString($response, 'Response is not string');
+        $this->prepareHandler();
+        $response = $this->client->castToObject();
+        self::assertIsObject($response);
+        self::assertTrue($response->foo === 'bar');
     }
 
     public function testBoolean()
     {
-        $response = $this->client->getTodoByIdBoolean(1);
-        $this->assertIsBool($response, 'Response is not boolean');
+        $this->prepareHandler();
+        $response = $this->client->castToBool();
+        self::assertTrue($response);
+    }
+
+    public function testString()
+    {
+        $this->prepareHandler();
+        $response = $this->client->castToString();
+        self::assertIsString($response);
+        self::assertTrue($response === '{"foo":"bar"}');
+    }
+
+    public function testInt()
+    {
+        $this->prepareHandler();
+        $response = $this->client->castToInt();
+        self::assertIsInt($response);
+        self::assertTrue($response === 200);
+    }
+
+    public function testArrayObject()
+    {
+        $this->prepareHandler();
+        $response = $this->client->castToArrayObject();
+        self::assertTrue($response->foo === 'bar');
+    }
+
+    public function testResponseInterface()
+    {
+        $this->prepareHandler();
+        $response = $this->client->castToResponse();
+        $this->assertTrue($response->getBody()->getContents() === '{"foo":"bar"}');
+    }
+
+    public function testVoid()
+    {
+        $this->prepareHandler();
+        $response = $this->client->castToVoid();
+        $this->assertTrue(is_null($response), 'Response is not void');
     }
 
     public function testMixed()
     {
-        $response = $this->client->getTodoByIdMixed(1);
-        $this->assertTrue($response instanceof ResponseInterface, 'Response is not ResponseInterface (mixed)');
+        $this->prepareHandler();
+        $response = $this->client->castToMixed();
+        $this->assertTrue($response instanceof ResponseInterface);
+        $this->assertTrue($response->getBody()->getContents() === '{"foo":"bar"}');
     }
 
-    public function testNone()
+    public function testDefault()
     {
-        $response = $this->client->getTodoByIdNone(1);
-        $this->assertTrue($response instanceof ResponseInterface, 'Response is not ResponseInterface (none)');
+        $this->prepareHandler();
+        $response = $this->client->castToDefault();
+        $this->assertTrue($response instanceof ResponseInterface);
+        $this->assertTrue($response->getBody()->getContents() === '{"foo":"bar"}');
     }
 
     public function testCastable()
     {
-        $response = $this->client->getTodoByIdCastable(1);
-        self::assertTrue(true);
+        $this->prepareHandler();
+        $response = $this->client->castToCastable();
+        self::assertTrue($response->foo === 'bar');
     }
 
-    public function testModelInterface()
+    public function testAutoMapped()
     {
-        $todo = $this->client->getTodoByIdMapped(1);
-        $todo->setTitle('testing-auto-mapped');
-        self::assertTrue($todo->getTitle() === 'testing-auto-mapped', 'Something goes wrong');
+        $this->prepareHandler();
+        $fooInterface = $this->client->castToAutoMapped();
+        $this->checkFooInterface($fooInterface);
     }
 
-    public function testGetTodosMapped()
+    public function testAutoMappedList()
     {
-        $todos = $this->client->getTodosMapped();
-        foreach ($todos as $todo)
-            self::assertTrue($todo instanceof \Tests\Clients\TodoInterface, 'Something goes wrong');
+        $this->handler->append(new Response(
+            headers: ['Content-Type' => 'application/json'],
+            body: json_encode([['foo' => 'bar'], ['foo' => 'bar']])
+        ));
+        $fooInterfaceList = $this->client->castToAutoMappedList();
+        foreach ($fooInterfaceList as $fooInterface) {
+            self::assertTrue($fooInterface instanceof FooInterface, 'Something goes wrong');
+            $this->checkFooInterface($fooInterface);
+        }
+    }
+
+    /**
+     * @param \Tests\Clients\FooInterface $fooInterface
+     */
+    private function checkFooInterface(FooInterface $fooInterface): void
+    {
+        self::assertTrue($fooInterface->getFoo() === 'bar');
+        self::assertTrue($fooInterface->foo === 'bar');
+        self::assertTrue($fooInterface['foo'] === 'bar');
+        self::assertTrue((string)$fooInterface === '{"foo":"bar"}');
+        self::assertTrue($fooInterface->jsonSerialize() === ['foo' => 'bar']);
+        foreach ($fooInterface as $key => $value)
+            self::assertTrue($key === 'foo' && $value === 'bar');
     }
 }
