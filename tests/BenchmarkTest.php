@@ -21,13 +21,10 @@ class BenchmarkTest extends TestCase
     {
         $timeStart = microtime(true);
         for ($i = 0; $i < 10000; $i++) {
-            Client::createFromInterface(
-                TestCaseClient::class,
-                'https://jsonplaceholder.typicode.com/'
-            );
+            Client::createFromInterface(TestCaseClient::class);
         }
         $timeEnd = microtime(true);
         $time = $timeEnd - $timeStart;
-        self::assertTrue($time <= 0.5);
+        self::assertTrue($time <= 0.25);
     }
 }

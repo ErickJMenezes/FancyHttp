@@ -14,7 +14,7 @@ class Basic implements ParameterAttribute
     {
         (!is_array($value) || count($value) !== 2) &&
         throw new InvalidArgumentException(
-            "The value of basic authorization must be an array with 2 values: username and password."
+            "The value of authorization must be an array with 2 values: username and password."
         );
     }
 }

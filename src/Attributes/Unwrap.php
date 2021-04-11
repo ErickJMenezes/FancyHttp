@@ -29,7 +29,7 @@ use Attribute;
 class Unwrap
 {
     public function __construct(
-        protected string $property = 'data'
+        public string $property = 'data'
     )
     {
     }

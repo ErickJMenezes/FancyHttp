@@ -14,8 +14,15 @@ use Psr\Http\Message\ResponseInterface;
  */
 class CastableForTesting implements Castable
 {
+    public function __construct(
+        public string $foo
+    )
+    {
+    }
+
     public static function castResponse(ResponseInterface $response): static
     {
-        return new static();
+        $data = json_decode($response->getBody()->getContents());
+        return new static($data->foo);
     }
 }

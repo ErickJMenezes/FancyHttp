@@ -2,9 +2,14 @@
 
 namespace Tests\Clients;
 
+use ErickJMenezes\FancyHttp\Attributes\Auth\Basic;
+use ErickJMenezes\FancyHttp\Attributes\Auth\Bearer;
+use ErickJMenezes\FancyHttp\Attributes\Auth\Digest;
+use ErickJMenezes\FancyHttp\Attributes\Auth\Ntml;
 use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\Delete;
 use ErickJMenezes\FancyHttp\Attributes\Get;
+use ErickJMenezes\FancyHttp\Attributes\Head;
 use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
 use ErickJMenezes\FancyHttp\Attributes\Headers;
 use ErickJMenezes\FancyHttp\Attributes\Json;
@@ -14,8 +19,10 @@ use ErickJMenezes\FancyHttp\Attributes\PathParam;
 use ErickJMenezes\FancyHttp\Attributes\Post;
 use ErickJMenezes\FancyHttp\Attributes\Put;
 use ErickJMenezes\FancyHttp\Attributes\Query;
+use ErickJMenezes\FancyHttp\Attributes\QueryParam;
 use ErickJMenezes\FancyHttp\Attributes\ReturnsMappedList;
 use ErickJMenezes\FancyHttp\Attributes\Suppress;
+use ErickJMenezes\FancyHttp\Attributes\Unwrap;
 use Psr\Http\Message\ResponseInterface;
 
 
@@ -28,110 +35,115 @@ use Psr\Http\Message\ResponseInterface;
  */
 interface TestCaseClient
 {
-    #[Get('todos')]
-    public function getTodos(#[Query] array $query = []): array;
+    // verbs test
 
-    #[Get('todos/{id}')]
-    public function getTodoById(#[PathParam('id')] int $id): array;
+    #[Get('/')]
+    public function get(): int;
 
-    #[Get('todos/{id}')]
-    public function getTodoByIdStringableParam(#[PathParam('id')] \Stringable $id): bool;
+    #[Post('/')]
+    public function post(): int;
 
-    #[Get('todos/{id}')]
+    #[Put('/')]
+    public function put(): int;
+
+    #[Patch('/')]
+    public function patch(): int;
+
+    #[Delete('/')]
+    public function delete(): int;
+
+    #[Head('/')]
+    public function head(): int;
+
+    // headers test
+
+    #[Get('/')]
+    public function headersAttribute(#[Headers] array $headers): int;
+
+    #[Get('/')]
+    public function headerParamAttribute(#[HeaderParam('X-Foo')] string $value = null): int;
+
+    #[Get('/')]
+    public function bearer(#[Bearer] string $token = 't'): int;
+
+    #[Get('/')]
+    public function basic(#[Basic] array $auth): int;
+
+    #[Get('/')]
+    public function digest(#[Digest] array $auth): int;
+
+    #[Get('/')]
+    public function ntml(#[Ntml] array $auth): int;
+
+    // sending data test
+
+    #[Post('/')]
+    public function body(#[Body] string $body): int;
+
+    #[Post('/')]
+    public function json(#[Json] array $json): int;
+
+    #[Get('/')]
+    public function query(#[Query] array $query): int;
+
+    #[Get('/')]
+    public function queryParams(#[QueryParam('foo')] string $foo, #[QueryParam('bar')] string $bar): int;
+
+    #[Get('/{foo}/{bar}')]
+    public function pathParams(#[PathParam('foo')] string $foo, #[PathParam('bar')] string $bar): int;
+
+    #[Get('/')]
+    public function multipart(#[Multipart] array $multipart): int;
+
+    // casting response test
+
+    #[Get('/')]
+    public function castToArray(): array;
+
+    #[Get('/')]
+    public function castToObject(): object;
+
+    #[Get('/')]
+    public function castToBool(): bool;
+
+    #[Get('/')]
+    public function castToString(): string;
+
+    #[Get('/')]
+    public function castToInt(): int;
+
+    #[Get('/')]
+    public function castToArrayObject(): \ArrayObject;
+
+    #[Get('/')]
+    public function castToResponse(): ResponseInterface;
+
+    #[Get('/')]
+    public function castToVoid(): void;
+
+    #[Get('/')]
+    public function castToMixed(): mixed;
+
+    #[Get('/')]
+    public function castToDefault();
+
+    #[Get('/')]
+    public function castToCastable(): CastableForTesting;
+
+    #[Get('/')]
+    public function castToAutoMapped(): FooInterface;
+
+    #[Get('/')]
+    #[ReturnsMappedList(FooInterface::class)]
+    public function castToAutoMappedList(): array;
+
+    // Instruction attributes test
+
+    #[Get('/')]
+    #[Unwrap]
+    public function unwrap(): array;
+
+    #[Get('/')]
     #[Suppress]
-    public function getTodoByIdSuppressed(#[PathParam('id')] int $id): ResponseInterface;
-
-    #[Post('todos')]
-    public function createTodo(#[Json] array $body): array;
-
-    #[Patch('todos/{id}')]
-    public function updateTodo(
-        #[PathParam('id')] int $id,
-        #[Json] array $body
-    ): array;
-
-    #[Put('todos/{id}')]
-    public function replaceTodo(
-        #[PathParam('id')] int $id,
-        #[Json] array $body
-    ): array;
-
-    #[Delete('todos/{id}')]
-    public function deleteTodo(#[PathParam('id')] int $id): bool;
-
-    #[Get('users/{id}/todos')]
-    public function getUserTodos(
-        #[PathParam('id')] int $id,
-        #[Query] array $query = []
-    ): array;
-
-    // Casting return types test.
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdArray(#[PathParam('id')] int $id): array;
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdObject(#[PathParam('id')] int $id): object;
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdResponseInterface(#[PathParam('id')] int $id): ResponseInterface;
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdVoid(#[PathParam('id')] int $id): void;
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdString(#[PathParam('id')] int $id): string;
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdBoolean(#[PathParam('id')] int $id): bool;
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdMixed(#[PathParam('id')] int $id): mixed;
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdNone(#[PathParam('id')] int $id);
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdCastable(#[PathParam('id')] int $id): CastableForTesting;
-
-    #[Get('todos/{id}')]
-    public function getTodoByIdMapped(#[PathParam('id')] int $id): TodoInterface;
-
-    /**
-     * @return array<\Tests\Clients\TodoInterface>
-     */
-    #[Get('todos')]
-    #[ReturnsMappedList(TodoInterface::class)]
-    public function getTodosMapped(): array;
-
-    #[Get('todos/{id1}/tests/{id2}')]
-    public function testMultiplePaths(
-        #[PathParam('id1')] $id1,
-        #[PathParam('id2')] $id2
-    ): array;
-
-    #[Get('todos/{id}')]
-    public function invalidPathParam(#[PathParam('id')] array $id): int;
-
-    #[Get('todos')]
-    public function invalidQueryParams(
-        #[Query] int $query
-    ): int;
-
-    #[Get('todos/{id}')]
-    public function invalidHeaders(
-        #[PathParam('id')] int $id,
-        #[Headers] string $headers
-    ): int;
-
-    #[Get('todos/{id}')]
-    public function invalidHeaderParam(
-        #[PathParam('id')] int $id,
-        #[HeaderParam('Authorization')] array $bearer
-    ): int;
-
-    #[Get('todos')]
-    public function invalidMultipart(
-        #[Multipart] int $parts
-    ): int;
+    public function suppress(): int;
 }
