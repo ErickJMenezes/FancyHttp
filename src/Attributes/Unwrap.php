@@ -8,18 +8,15 @@ use Attribute;
 /**
  * Class Unwrap
  *
- * allows to unwrap the response data from a wrapper object to directly
- * returns it.
+ * Tells the client to retrieve a specific key of the response.
+ * It's very useful when the response data is inside of a root object.
  *
  * <pre>
- * // In this example, the data is wrapped in a object with metadata,
- * // about the pagination.
- * $response = [
- *     'per_page' => 5,
- *     'current_page' => 3,
- *      ...
- *     'data' => [...]
- * ]
+ * // In this example, the data we need is wrapped in a root object.
+ * {
+ *    "status": "FOUND",
+ *    "data": { ... }
+ * }
  * </pre>
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
@@ -28,6 +25,11 @@ use Attribute;
 #[Attribute(Attribute::TARGET_METHOD)]
 class Unwrap
 {
+    /**
+     * Unwrap constructor.
+     *
+     * @param string $property The name of the internal object to extract.
+     */
     public function __construct(
         public string $property = 'data'
     )

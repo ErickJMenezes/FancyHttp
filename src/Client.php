@@ -17,7 +17,7 @@ use ReflectionException;
 
 
 /**
- * Class ClientProxy
+ * Class Client
  *
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package  ErickJMenezes\FancyHttp
@@ -25,9 +25,19 @@ use ReflectionException;
  */
 class Client
 {
+    /**
+     * @var \Psr\Http\Message\ResponseInterface|null
+     */
     public ?ResponseInterface $lastResponse = null;
+
+    /**
+     * @var \GuzzleHttp\ClientInterface
+     */
     protected ClientInterface $client;
-    /** @var \ReflectionClass<T> $interface */
+
+    /**
+     * @var \ReflectionClass<T> $interface
+     */
     protected ReflectionClass $interface;
 
     /**
@@ -40,8 +50,8 @@ class Client
      */
     protected function __construct(
         string $interfaceClass,
-        ?string $baseUri = null,
-        array $guzzleOptions = []
+        ?string $baseUri,
+        array $guzzleOptions
     )
     {
         $invalidArgumentException = new InvalidArgumentException("The value \"{$interfaceClass}\" is not a valid fully qualified interface name.");
@@ -55,28 +65,39 @@ class Client
     }
 
     /**
-     * @param class-string<I>     $interface
-     * @param string|null         $baseUri
-     * @param array<string,mixed> $guzzleOptions
+     * Creates a new http client instance using the fully qualified class name of any valid
+     * PHP interface.
+     *
+     * @param class-string<I>     $interface The fully qualified class name of your interface.
+     *                                       Example: MyClientInterface::class
+     * @param string|null         $baseUri [Optional] The base URI of the API you want to consume.
+     *                                     Example: https://app.exampledomain.com/api/
+     * @param array<string,mixed> $guzzleOptions [Optional] Here you can define some specific guzzle options.
      * @return I
      * @template I of object
      * @throws \Exception
      */
-    public static function createFromInterface(string $interface, string $baseUri = null, array $guzzleOptions = []): object
+    public static function createFor(string $interface, string $baseUri = null, array $guzzleOptions = []): object
     {
         return (new self($interface, $baseUri, $guzzleOptions))->generate();
     }
 
     /**
+     * Here's where the anonymous class that implements the user's client interface.
+     * is generated at runtime.
+     *
      * @return T
      * @throws \Exception
      */
-    protected function generate(): mixed
+    protected function generate(): object
     {
         return (new Implementer($this->interface))->make($this);
     }
 
     /**
+     * Here's where the generated client calls are
+     * handled and dispatched to guzzle's client.
+     *
      * @param string $name
      * @param array  $arguments
      * @return mixed
@@ -87,7 +108,6 @@ class Client
     {
         !$this->interface->hasMethod($name) &&
         throw new BadMethodCallException("The method {$name} is not declared in {$this->interface->getName()}.");
-
         return $this->callClientMethod($name, $arguments);
     }
 
@@ -100,12 +120,10 @@ class Client
      */
     protected function callClientMethod(string $name, array $arguments): mixed
     {
-        $reflectedMethod = $this->interface->getMethod($name);
-        $method = new Method(
-            $reflectedMethod,
-            new Parameters($reflectedMethod->getParameters(), $arguments),
-            $this
-        );
-        return $method->call($this->client);
+        return (new Method(
+            $this->interface->getMethod($name),
+            $arguments,
+            $this,
+        ))->call($this->client);
     }
 }
