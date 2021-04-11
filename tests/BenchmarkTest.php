@@ -21,7 +21,7 @@ class BenchmarkTest extends TestCase
     {
         $timeStart = microtime(true);
         for ($i = 0; $i < 10000; $i++) {
-            Client::createFromInterface(TestCaseClient::class);
+            Client::createFor(TestCaseClient::class);
         }
         $timeEnd = microtime(true);
         $time = $timeEnd - $timeStart;

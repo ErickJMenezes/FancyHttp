@@ -8,9 +8,6 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Tests\Clients\ClientSetup;
-use const CURLAUTH_DIGEST;
-use const CURLOPT_HTTPAUTH;
-use const CURLOPT_USERPWD;
 
 /**
  * Class HeadersTest

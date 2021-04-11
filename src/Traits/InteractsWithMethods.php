@@ -31,13 +31,15 @@ trait InteractsWithMethods
 
     protected AbstractHttpMethod $verb;
     protected string $returnType;
+    protected Parameters $parameters;
 
     public function __construct(
         protected ReflectionMethod $method,
-        protected Parameters $parameters,
-        protected Client $parent
+        array $arguments,
+        protected Client $parent,
     )
     {
+        $this->parameters = new Parameters($method->getParameters(), $arguments);
         $this->loadVerb();
         $this->returnType = $this->method->getReturnType()?->getName() ?? 'mixed';
     }

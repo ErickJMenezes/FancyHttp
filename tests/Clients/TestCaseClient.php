@@ -29,9 +29,9 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * Interface TestCaseClient
  *
+ * @property-read ResponseInterface|null $lastResponse
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package Tests\Clients
- * @property-read ResponseInterface $lastResponse
  */
 interface TestCaseClient
 {

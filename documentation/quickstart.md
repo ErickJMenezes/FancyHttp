@@ -4,8 +4,6 @@ Introducing the FancyHttp and some usage examples.
 
 ## Creating a client
 
----
-
 ### Creating an interface
 
 ```php
@@ -45,9 +43,9 @@ class FooController
     
     public function __construct() 
     {
-        $this->fooClient = Client::createFromInterface(
+        $this->fooClient = Client::createFor(
             FooClient::class,
-            'https://api.fooapp.com'
+            'https://api.fooapp.com/'
         );
     }
 }
@@ -64,13 +62,14 @@ any function.
 ```php
 use ErickJMenezes\FancyHttp\Client;
 ```
-This class provides only one method: `Client::createFromInterface()`  
-the method accepts two arguments, the first is the **fully qualified interface name**, 
-and the second is the **base uri** according to 
-[RFC 3986](https://tools.ietf.org/html/rfc3986#section-5.2).
+This class provides only one method: `Client::createFor()`  
+the method accepts three arguments, the first is the **fully qualified interface name**, 
+the second is the **base uri** according to 
+[RFC 3986](https://tools.ietf.org/html/rfc3986#section-5.2) (optional),
+and the third is an array with guzzle options (optional).
 
 ```php
-$client = Client::createFromInterface(
+$client = Client::createFor(
     YourInterface::class,
     'https://your.base-uri.com/api/'
 );
