@@ -1,12 +1,12 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Lib;
+namespace FancyHttp\Lib;
 
 use ArrayObject;
-use ErickJMenezes\FancyHttp\Castable;
-use ErickJMenezes\FancyHttp\Client;
-use ErickJMenezes\FancyHttp\Traits\InteractsWithMethods;
+use FancyHttp\Castable;
+use FancyHttp\Client;
+use FancyHttp\Traits\InteractsWithMethods;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Psr7\Response;

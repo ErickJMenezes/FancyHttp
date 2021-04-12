@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Traits;
+namespace FancyHttp\Traits;
 
 use Exception;
 use InvalidArgumentException;
@@ -12,7 +12,7 @@ use WeakMap;
  * Trait InteractsWithParameters
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Traits\Concerns
+ * @package FancyHttp\Traits\Concerns
  * @internal
  */
 trait InteractsWithParameters
@@ -35,7 +35,7 @@ trait InteractsWithParameters
      * @param class-string<T> $attribute
      * @param mixed|null      $default
      * @return mixed|R
-     * @template T of \ErickJMenezes\FancyHttp\Contracts\ParameterAttribute
+     * @template T of \FancyHttp\Contracts\ParameterAttribute
      * @template R
      * @throws \Exception
      */
@@ -49,7 +49,7 @@ trait InteractsWithParameters
     /**
      * @param class-string<T> $attribute
      * @return array<int,mixed>
-     * @template T of \ErickJMenezes\FancyHttp\Contracts\ParameterAttribute
+     * @template T of \FancyHttp\Contracts\ParameterAttribute
      */
     protected function valuesFor(string $attribute): array
     {
@@ -69,7 +69,7 @@ trait InteractsWithParameters
      * @param class-string<T> $singleTypeAttribute
      * @return array
      * @throws \Exception
-     * @template T of \ErickJMenezes\FancyHttp\Contracts\ParameterAttribute
+     * @template T of \FancyHttp\Contracts\ParameterAttribute
      */
     protected function valuesForPair(string $listTypeAttribute, string $singleTypeAttribute): array
     {
@@ -84,7 +84,7 @@ trait InteractsWithParameters
     /**
      * @param class-string<T> $attribute
      * @return array<ReflectionParameter>
-     * @template T of \ErickJMenezes\FancyHttp\Contracts\ParameterAttribute
+     * @template T of \FancyHttp\Contracts\ParameterAttribute
      */
     protected function withAttributes(string $attribute): array
     {

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Lib;
+namespace FancyHttp\Lib;
 
 
 use Closure;
@@ -47,7 +47,8 @@ class Implementer
                 public function __construct(protected $parent) {}
                 public function __get(string $name) {return $this->parent->$name;}
                 public function __set(string $name, $value) {$this->parent->$name = $value;}
-                protected function callParent($method, $arguments) {return $this->parent->{$method}(...$arguments);}
+                protected function callParent($method, $arguments) {return $this->parseReturnedValue($this->parent->{$method}(...$arguments));}
+                protected function parseReturnedValue($value) {return $value === $this->parent ? $this : $value;}
                 %s
             };
         };',
@@ -64,8 +65,7 @@ class Implementer
     {
         $methods = '';
         foreach ($this->interface->getMethods() as $method) {
-            $m = new MethodGenerator($method);
-            $methods .= $m;
+            $methods .= new MethodGenerator($method);
         }
         return $methods;
     }

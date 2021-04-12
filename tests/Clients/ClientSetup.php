@@ -3,7 +3,7 @@
 
 namespace Tests\Clients;
 
-use ErickJMenezes\FancyHttp\Client;
+use FancyHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;

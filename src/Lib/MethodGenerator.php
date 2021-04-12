@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Lib;
+namespace FancyHttp\Lib;
 
 use Exception;
 use ReflectionMethod;
@@ -14,7 +14,7 @@ use Stringable;
  * Class MethodGenerator
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Compilers
+ * @package FancyHttp\Compilers
  * @internal
  */
 class MethodGenerator implements Stringable

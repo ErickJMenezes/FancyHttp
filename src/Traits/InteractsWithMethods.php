@@ -1,30 +1,31 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Traits;
+namespace FancyHttp\Traits;
 
 use BadMethodCallException;
-use ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod;
-use ErickJMenezes\FancyHttp\Attributes\Async;
-use ErickJMenezes\FancyHttp\Attributes\AutoMapped;
-use ErickJMenezes\FancyHttp\Attributes\ReturnsMappedList;
-use ErickJMenezes\FancyHttp\Attributes\Suppress;
-use ErickJMenezes\FancyHttp\Attributes\Unwrap;
-use ErickJMenezes\FancyHttp\Client;
-use ErickJMenezes\FancyHttp\Lib\AMProxy;
-use ErickJMenezes\FancyHttp\Lib\Implementer;
-use ErickJMenezes\FancyHttp\Lib\Parameters;
+use FancyHttp\Attributes\AbstractHttpMethod;
+use FancyHttp\Attributes\Async;
+use FancyHttp\Attributes\AutoMapped;
+use FancyHttp\Attributes\ReturnsMappedList;
+use FancyHttp\Attributes\Suppress;
+use FancyHttp\Attributes\Unwrap;
+use FancyHttp\Client;
+use FancyHttp\Lib\AMProxy;
+use FancyHttp\Lib\Implementer;
+use FancyHttp\Lib\Parameters;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
+use function FancyHttp\array_get;
 
 /**
  * Trait InteractsWithMethods
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Traits\Concerns
+ * @package FancyHttp\Traits\Concerns
  * @internal
  */
 trait InteractsWithMethods
@@ -55,7 +56,7 @@ trait InteractsWithMethods
 
     /**
      * @param \ReflectionClass<IType> $interface
-     * @param array<mixed>            $data
+     * @param array<string,mixed>            $data
      * @return IType
      * @throws \Exception
      * @template IType of object
@@ -67,17 +68,16 @@ trait InteractsWithMethods
 
     /**
      * @param \ReflectionClass<IType> $interface
-     * @param array<array<mixed>>     $data
+     * @param array<array<string,mixed>>     $data
      * @return array<IType>
      * @throws \Exception
      * @template IType of object
      */
     protected function createProxies(ReflectionClass $interface, array $data): array
     {
-        $map = $interface->getAttributes(AutoMapped::class)[0]->newInstance()->map;
         $implementer = new Implementer($interface);
         $list = [];
-        foreach ($data as $item) $list[] = $implementer->make(new AMProxy($item, $map));
+        foreach ($data as $item) $list[] = $implementer->make(new AMProxy($item, $interface));
         return $list;
     }
 
@@ -137,8 +137,8 @@ trait InteractsWithMethods
      */
     protected function decodeResponse(ResponseInterface $response): array
     {
-        $response = json_decode($response->getBody()->getContents(), true);
-        if ($this->mustUnwrap()) return $response[$this->getWrapperProperty()];
+        $response = (array)json_decode($response->getBody()->getContents(), true);
+        if ($this->mustUnwrap() && !empty($response)) return array_get($response, $this->getWrapperProperty());
         return $response;
     }
 

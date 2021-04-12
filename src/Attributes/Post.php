@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Attributes;
+namespace FancyHttp\Attributes;
 
 
 use Attribute;

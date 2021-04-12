@@ -1,11 +1,11 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Attributes;
+namespace FancyHttp\Attributes;
 
 /**
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Attributes
+ * @package FancyHttp\Attributes
  */
 abstract class AbstractHttpMethod
 {

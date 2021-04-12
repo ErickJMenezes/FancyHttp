@@ -4,7 +4,7 @@
 namespace Tests;
 
 
-use ErickJMenezes\FancyHttp\Client;
+use FancyHttp\Client;
 use PHPUnit\Framework\TestCase;
 use Tests\Clients\TestCaseClient;
 

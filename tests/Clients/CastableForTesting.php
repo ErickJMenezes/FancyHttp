@@ -3,7 +3,7 @@
 
 namespace Tests\Clients;
 
-use ErickJMenezes\FancyHttp\Castable;
+use FancyHttp\Castable;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -20,9 +20,9 @@ class CastableForTesting implements Castable
     {
     }
 
-    public static function castResponse(ResponseInterface $response): static
+    public static function castResponse(ResponseInterface $response): Castable
     {
         $data = json_decode($response->getBody()->getContents());
-        return new static($data->foo);
+        return new self($data->foo);
     }
 }

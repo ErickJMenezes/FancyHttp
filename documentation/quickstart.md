@@ -11,8 +11,8 @@ Introducing the FancyHttp and some usage examples.
 
 namespace App\Clients;
 
-use ErickJMenezes\FancyHttp\Attributes\Get;
-use ErickJMenezes\FancyHttp\Attributes\PathParam;
+use FancyHttp\Attributes\Get;
+use FancyHttp\Attributes\PathParam;
 
 interface FooClient
 {
@@ -35,7 +35,7 @@ the FancyHttp must make the request to the api.
 namespace App\Controllers;
 
 use App\Clients\FooClient;
-use ErickJMenezes\FancyHttp\Client;
+use FancyHttp\Client;
 
 class FooController
 {
@@ -52,7 +52,7 @@ class FooController
 ```
 
 To make use of FooClient, we just ask to FancyHttp to generate an implementation
-for that interface. The `ErickJMenezes\FancyHttp\Client` class can really generate
+for that interface. The `FancyHttp\Client` class can really generate
 a concrete implementation for the interface provided in the first argument, this
 means you can safely assign to a typed property or pass to any typed parameter of
 any function.
@@ -60,7 +60,7 @@ any function.
 ### The client
 
 ```php
-use ErickJMenezes\FancyHttp\Client;
+use FancyHttp\Client;
 ```
 This class provides only one method: `Client::createForInterface()`  
 the method accepts three arguments, the first is the **fully qualified interface name**, 
@@ -69,7 +69,7 @@ the second is the **base uri** according to
 and the third is an array with guzzle options (optional).
 
 ```php
-use ErickJMenezes\FancyHttp\Client;
+use FancyHttp\Client;
 
 $client = Client::createForInterface(
     YourInterface::class,
@@ -89,7 +89,7 @@ to the type delcared in the interface.
 namespace App\Controllers;
 
 use App\Clients\FooClient;
-use ErickJMenezes\FancyHttp\Client;
+use FancyHttp\Client;
 
 class FooController
 {
@@ -123,7 +123,7 @@ FancyHttp allows the client interface methods to have different return types:
 - \Psr\Http\Message\ResponseInterface
 - mixed
 - no type
-- \ErickJMenezes\FancyHttp\Castable (special type)
+- \FancyHttp\Castable (special type)
 - AutoMapped Interface (special type)
 
 *Work in progress*

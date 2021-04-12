@@ -1,10 +1,10 @@
 <?php
 
-namespace ErickJMenezes\FancyHttp\Attributes;
+namespace FancyHttp\Attributes;
 
 use Attribute;
-use ErickJMenezes\FancyHttp\Contracts\ParameterAttribute;
-use ErickJMenezes\FancyHttp\Traits\Concerns\ExpectsStringOrInt;
+use FancyHttp\Contracts\ParameterAttribute;
+use FancyHttp\Traits\Concerns\ExpectsStringOrInt;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
 class PathParam implements ParameterAttribute

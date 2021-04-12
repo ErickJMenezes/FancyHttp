@@ -1,23 +1,23 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Lib;
+namespace FancyHttp\Lib;
 
 
-use ErickJMenezes\FancyHttp\Attributes\Auth\Basic;
-use ErickJMenezes\FancyHttp\Attributes\Auth\Bearer;
-use ErickJMenezes\FancyHttp\Attributes\Auth\Digest;
-use ErickJMenezes\FancyHttp\Attributes\Auth\Ntml;
-use ErickJMenezes\FancyHttp\Attributes\Body;
-use ErickJMenezes\FancyHttp\Attributes\FormParams;
-use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
-use ErickJMenezes\FancyHttp\Attributes\Headers;
-use ErickJMenezes\FancyHttp\Attributes\Json;
-use ErickJMenezes\FancyHttp\Attributes\Multipart;
-use ErickJMenezes\FancyHttp\Attributes\PathParam;
-use ErickJMenezes\FancyHttp\Attributes\Query;
-use ErickJMenezes\FancyHttp\Attributes\QueryParam;
-use ErickJMenezes\FancyHttp\Traits\InteractsWithParameters;
+use FancyHttp\Attributes\Auth\Basic;
+use FancyHttp\Attributes\Auth\Bearer;
+use FancyHttp\Attributes\Auth\Digest;
+use FancyHttp\Attributes\Auth\Ntml;
+use FancyHttp\Attributes\Body;
+use FancyHttp\Attributes\FormParams;
+use FancyHttp\Attributes\HeaderParam;
+use FancyHttp\Attributes\Headers;
+use FancyHttp\Attributes\Json;
+use FancyHttp\Attributes\Multipart;
+use FancyHttp\Attributes\PathParam;
+use FancyHttp\Attributes\Query;
+use FancyHttp\Attributes\QueryParam;
+use FancyHttp\Traits\InteractsWithParameters;
 use Exception;
 
 
@@ -25,7 +25,7 @@ use Exception;
  * Class Parameters
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Lib
+ * @package FancyHttp\Lib
  * @internal
  */
 class Parameters

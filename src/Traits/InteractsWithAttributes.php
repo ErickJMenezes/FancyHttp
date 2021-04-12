@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Traits;
+namespace FancyHttp\Traits;
 
 use ReflectionClass;
 use ReflectionMethod;
@@ -11,7 +11,7 @@ use ReflectionParameter;
  * Trait InteractsWithAttributes
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Traits\Concerns
+ * @package FancyHttp\Traits\Concerns
  * @internal
  */
 trait InteractsWithAttributes

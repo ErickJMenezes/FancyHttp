@@ -1,10 +1,10 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Attributes\Auth;
+namespace FancyHttp\Attributes\Auth;
 
 use Attribute;
-use ErickJMenezes\FancyHttp\Contracts\ParameterAttribute;
+use FancyHttp\Contracts\ParameterAttribute;
 use InvalidArgumentException;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
