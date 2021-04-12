@@ -71,10 +71,10 @@ class Method
     {
         if (is_a($this->returnType, Castable::class, true)) {
             return $this->returnType::castResponse($response);
-        } elseif ($this->returnAutoMapped()) {
-            return $this->createProxy($this->getAutoMappedInterface(), $this->decodeResponse($response));
-        } elseif ($this->returnMappedList()) {
-            $data = $this->createProxies($this->getMappedListInterface(), $this->decodeResponse($response));
+        } elseif ($mappedInterface = $this->returnAutoMapped()) {
+            return $this->createProxy($mappedInterface, $this->decodeResponse($response));
+        } elseif ($mappedInterface = $this->returnMappedList()) {
+            $data = $this->createProxies($mappedInterface, $this->decodeResponse($response));
             return $this->returnType === ArrayObject::class ?
                 new ArrayObject($data, ArrayObject::ARRAY_AS_PROPS) :
                 $data;
