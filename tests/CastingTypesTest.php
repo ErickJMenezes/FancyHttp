@@ -8,7 +8,6 @@ use Psr\Http\Message\ResponseInterface;
 use Tests\Clients\ClientSetup;
 use Tests\Clients\FooInterface;
 
-
 /**
  * Class CastingTypesTest
  *
@@ -19,20 +18,18 @@ class CastingTypesTest extends TestCase
 {
     use ClientSetup;
 
-    protected function prepareHandler(int $times = 1): void
+    protected function prepareHandler(): void
     {
-        for ($i = 0; $i < $times; $i++)
-            $this->handler->append(new Response(
-                headers: ['Content-Type' => 'application/json'],
-                body: json_encode(['foo' => 'bar'])
-            ));
+        $this->handler->append(new Response(
+            headers: ['Content-Type' => 'application/json'],
+            body: json_encode(['foo' => 'bar'])
+        ));
     }
 
     public function testArray()
     {
         $this->prepareHandler();
         $response = $this->client->castToArray();
-        $this->assertIsArray($response);
         self::assertTrue($response['foo'] === 'bar');
     }
 
@@ -40,7 +37,6 @@ class CastingTypesTest extends TestCase
     {
         $this->prepareHandler();
         $response = $this->client->castToObject();
-        self::assertIsObject($response);
         self::assertTrue($response->foo === 'bar');
     }
 
@@ -55,7 +51,6 @@ class CastingTypesTest extends TestCase
     {
         $this->prepareHandler();
         $response = $this->client->castToString();
-        self::assertIsString($response);
         self::assertTrue($response === '{"foo":"bar"}');
     }
 
@@ -63,7 +58,6 @@ class CastingTypesTest extends TestCase
     {
         $this->prepareHandler();
         $response = $this->client->castToInt();
-        self::assertIsInt($response);
         self::assertTrue($response === 200);
     }
 
@@ -84,8 +78,8 @@ class CastingTypesTest extends TestCase
     public function testVoid()
     {
         $this->prepareHandler();
-        $response = $this->client->castToVoid();
-        $this->assertTrue(is_null($response), 'Response is not void');
+        $this->client->castToVoid();
+        $this->expectNotToPerformAssertions();
     }
 
     public function testMixed()
@@ -102,6 +96,13 @@ class CastingTypesTest extends TestCase
         $response = $this->client->castToDefault();
         $this->assertTrue($response instanceof ResponseInterface);
         $this->assertTrue($response->getBody()->getContents() === '{"foo":"bar"}');
+    }
+
+    public function testPromise()
+    {
+        $this->prepareHandler();
+        $this->client->castToPromise();
+        $this->expectNotToPerformAssertions();
     }
 
     public function testCastable()

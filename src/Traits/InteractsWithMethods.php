@@ -5,6 +5,7 @@ namespace ErickJMenezes\FancyHttp\Traits;
 
 use BadMethodCallException;
 use ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod;
+use ErickJMenezes\FancyHttp\Attributes\Async;
 use ErickJMenezes\FancyHttp\Attributes\AutoMapped;
 use ErickJMenezes\FancyHttp\Attributes\ReturnsMappedList;
 use ErickJMenezes\FancyHttp\Attributes\Suppress;
@@ -13,6 +14,7 @@ use ErickJMenezes\FancyHttp\Client;
 use ErickJMenezes\FancyHttp\Lib\AMProxy;
 use ErickJMenezes\FancyHttp\Lib\Implementer;
 use ErickJMenezes\FancyHttp\Lib\Parameters;
+use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionClass;
 use ReflectionException;
@@ -90,9 +92,9 @@ trait InteractsWithMethods
     }
 
     /**
-     * @param class-string<I> $interface
+     * @param class-string<TClassString> $interface
      * @return bool
-     * @template I of object
+     * @template TClassString
      */
     protected function isAutoMapped(string $interface): bool
     {
@@ -148,5 +150,10 @@ trait InteractsWithMethods
     protected function getWrapperProperty(): string
     {
         return $this->getAttributeInstance($this->method, Unwrap::class)->property;
+    }
+
+    protected function isAsynchronous(): bool
+    {
+        return is_a($this->returnType, PromiseInterface::class, true);
     }
 }

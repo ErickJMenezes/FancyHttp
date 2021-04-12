@@ -4,11 +4,11 @@
 namespace ErickJMenezes\FancyHttp\Lib;
 
 use ArrayObject;
-use ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod;
 use ErickJMenezes\FancyHttp\Castable;
 use ErickJMenezes\FancyHttp\Client;
 use ErickJMenezes\FancyHttp\Traits\InteractsWithMethods;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\MessageInterface;
@@ -47,11 +47,18 @@ class Method
      */
     public function call(ClientInterface $client): mixed
     {
-        return $this->castResponse($this->parent->lastResponse = $client->request(
+        $response = $client->requestAsync(
             $this->verb::method(),
             $this->parameters->parsePath($this->verb->path),
             $this->getOptions()
-        ));
+        );
+        if ($this->isAsynchronous()) return $response;
+        try {
+            return $this->castResponse($this->parent->lastResponse = $response->wait());
+        } catch (BadResponseException $badResponseException) {
+            $this->parent->lastResponse = $badResponseException->getResponse();
+            throw $badResponseException;
+        }
     }
 
     /**
@@ -68,7 +75,9 @@ class Method
             return $this->createProxy($this->getAutoMappedInterface(), $this->decodeResponse($response));
         } elseif ($this->returnMappedList()) {
             $data = $this->createProxies($this->getMappedListInterface(), $this->decodeResponse($response));
-            return $this->returnType === ArrayObject::class ? new ArrayObject($data) : $data;
+            return $this->returnType === ArrayObject::class ?
+                new ArrayObject($data, ArrayObject::ARRAY_AS_PROPS) :
+                $data;
         }
 
         return match ($this->returnType) {

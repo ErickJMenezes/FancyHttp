@@ -7,7 +7,6 @@ namespace ErickJMenezes\FancyHttp;
 use BadMethodCallException;
 use ErickJMenezes\FancyHttp\Lib\Implementer;
 use ErickJMenezes\FancyHttp\Lib\Method;
-use ErickJMenezes\FancyHttp\Lib\Parameters;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
 use InvalidArgumentException;
