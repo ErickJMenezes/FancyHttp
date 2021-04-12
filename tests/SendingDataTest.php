@@ -102,13 +102,29 @@ class SendingDataTest extends TestCase
                 return new Response();
             return new Response(400);
         };
-        $this->handler->append($mock, $mock);
+        $this->handler->append($mock);
 
         $status = $this->client->multipart([
             [
-                'name'     => 'foo',
+                'name' => 'foo',
                 'contents' => 'data'
             ]
+        ]);
+        self::assertTrue($status === 200);
+    }
+
+    public function testFormParams()
+    {
+        $mock = function (RequestInterface $request, array $options) {
+            if ($request->getHeaderLine('Content-Type') === 'application/x-www-form-urlencoded')
+                return new Response();
+            return new Response(400);
+        };
+        $this->handler->append($mock);
+
+        $status = $this->client->formParams([
+            'foo' => 'bar',
+            'bar' => 'baz'
         ]);
         self::assertTrue($status === 200);
     }

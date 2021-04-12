@@ -4,12 +4,17 @@
 namespace ErickJMenezes\FancyHttp\Lib;
 
 use ArrayObject;
+use ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod;
 use ErickJMenezes\FancyHttp\Castable;
+use ErickJMenezes\FancyHttp\Client;
 use ErickJMenezes\FancyHttp\Traits\InteractsWithMethods;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
+use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
+use ReflectionMethod;
 use RuntimeException;
 
 /**
@@ -24,6 +29,15 @@ use RuntimeException;
 class Method
 {
     use InteractsWithMethods;
+
+    public function __construct(ReflectionMethod $method, array $arguments, Client $parent)
+    {
+        $this->method = $method;
+        $this->parent = $parent;
+        $this->parameters = new Parameters($method->getParameters(), $arguments);
+        $this->returnType = $this->method->getReturnType()?->getName() ?? 'mixed';
+        $this->loadVerb();
+    }
 
     /**
      * @param \GuzzleHttp\ClientInterface $client
@@ -64,7 +78,8 @@ class Method
             'string' => $response->getBody()->getContents(),
             'int', 'float', 'double' => $response->getStatusCode(),
             'object', ArrayObject::class => new ArrayObject($this->decodeResponse($response), ArrayObject::ARRAY_AS_PROPS),
-            ResponseInterface::class, Response::class, 'mixed' => $response,
+            StreamInterface::class => $response->getBody(),
+            ResponseInterface::class, Response::class, MessageInterface::class, 'mixed' => $response,
             default => throw new RuntimeException("{$this->returnType} is not a valid return type.")
         };
     }

@@ -32,6 +32,21 @@ class Parameters
 {
     use InteractsWithParameters;
 
+    /**
+     * @param array<\ReflectionParameter> $reflectionParameters
+     * @param array                      $arguments
+     */
+    public function __construct(array $reflectionParameters, array $arguments)
+    {
+        $this->reflectionParameters = $reflectionParameters;
+        $this->arguments = $arguments;
+        $this->loadParameterMap();
+    }
+
+    /**
+     * @return array
+     * @throws \Exception
+     */
     public function getQueryParameters(): array
     {
         return $this->valuesForPair(
@@ -65,10 +80,11 @@ class Parameters
 
     /**
      * @return array
+     * @throws \Exception
      */
-    public function getFormParams(): array
+    public function getFormParams(): ?array
     {
-        return $this->valuesFor(FormParams::class);
+        return $this->valueFor(FormParams::class);
     }
 
     /**

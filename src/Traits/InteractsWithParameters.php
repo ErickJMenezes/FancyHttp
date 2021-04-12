@@ -20,21 +20,16 @@ trait InteractsWithParameters
     use InteractsWithAttributes;
 
     /**
-     * @var \WeakMap<ReflectionParameter,mixed>
+     * @var \WeakMap<\ReflectionParameter,mixed>
      */
     protected WeakMap $parameterMap;
 
     /**
-     * @param array<ReflectionParameter> $reflectionParameters
-     * @param array                      $arguments
+     * @var array<ReflectionParameter>
      */
-    public function __construct(
-        protected array $reflectionParameters,
-        protected array $arguments
-    )
-    {
-        $this->loadParameters();
-    }
+    protected array $reflectionParameters;
+
+    protected array $arguments;
 
     /**
      * @param class-string<T> $attribute
@@ -99,7 +94,7 @@ trait InteractsWithParameters
         ));
     }
 
-    protected function loadParameters(): void
+    protected function loadParameterMap(): void
     {
         $this->parameterMap = new WeakMap();
         foreach ($this->reflectionParameters as $parameter) {
@@ -120,6 +115,7 @@ trait InteractsWithParameters
 
     protected function get(ReflectionParameter $parameter): mixed
     {
+        /** @noinspection PhpIllegalArrayKeyTypeInspection */
         return $this->parameterMap[$parameter];
     }
 }
