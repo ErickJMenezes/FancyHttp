@@ -5,6 +5,7 @@ namespace Tests;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
+use Tests\Clients\BarInterface;
 use Tests\Clients\ClientSetup;
 use Tests\Clients\FooInterface;
 
@@ -117,6 +118,16 @@ class CastingTypesTest extends TestCase
         $this->prepareHandler();
         $fooInterface = $this->client->castToAutoMapped();
         $this->checkFooInterface($fooInterface);
+        $this->handler->append(
+            new Response(body: '{"nested":{"bar":"bar"}, "nested_list":[{"bar":"bar"}]}')
+        );
+        $response = $this->client->castToAutoMapped();
+        $value = $response->getNested()->getBar();
+        self::assertTrue($value === 'bar');
+
+        $nestedList = $response->getNestedList()[0];
+        self::assertTrue($nestedList instanceof BarInterface);
+        self::assertTrue($nestedList->getBar() === 'bar');
     }
 
     /**

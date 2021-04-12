@@ -5,10 +5,11 @@ namespace FancyHttp\Lib;
 
 
 use ArrayAccess;
+use ArrayObject;
 use BadMethodCallException;
-use FancyHttp\Attributes\MapTo;
-use FancyHttp\Traits\InteractsWithAttributes;
 use Exception;
+use FancyHttp\Attributes\MapTo;
+use FancyHttp\Traits\InteractsWithAutoMappedTypes;
 use Iterator;
 use JsonSerializable;
 use ReflectionClass;
@@ -27,7 +28,7 @@ use function FancyHttp\array_set;
  */
 class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
 {
-    use InteractsWithAttributes;
+    use InteractsWithAutoMappedTypes;
 
     /**
      * @var array<class-string, array<string,string>>
@@ -43,6 +44,7 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
      *
      * @param array            $data
      * @param \ReflectionClass $interface
+     * @throws \Exception
      */
     public function __construct(
         protected array $data,
@@ -54,8 +56,10 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
             $this->keyMap = self::$mapCache[$interfaceName];
         } else {
             foreach ($this->interface->getMethods() as $method)
-                if ($method->class === $interfaceName)
+                if ($method->class === $interfaceName) {
+                    $this->checkMethodReturnType($method);
                     $this->loadMethodMap($method);
+                }
             self::$mapCache[$interfaceName] = $this->keyMap;
         }
     }
@@ -67,7 +71,7 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
             $this->keyMap[$method->getName()] = $name;
             return;
         }
-        throw new BadMethodCallException("The method \"{$method}\" has no property map.");
+        throw new BadMethodCallException("The method {$method->class}::{$method->getName()}() has no property map.");
     }
 
     /**
@@ -79,31 +83,46 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
      */
     public function __call(string $name, array $arguments)
     {
+        $method = $this->interface->getMethod($name);
+        $returnType = $method->getReturnType()?->getName() ?? 'mixed';
         $mappedName = $this->keyMap[$name];
+
         if (count($arguments) === 0) {
-            return $this->get($mappedName);
+            $data = $this->get($mappedName);
+            if ($mappedInterface = $this->isAutoMapped($returnType)) {
+                return $this->createProxy($mappedInterface, $data);
+            } elseif ($mappedInterface = $this->returnsAutoMappedList($method)) {
+                $list = $this->createProxies($mappedInterface, $data);
+                return $returnType === ArrayObject::class ?
+                    new ArrayObject($list, ArrayObject::ARRAY_AS_PROPS) :
+                    $list;
+            }
+            return $data;
         } else {
             $this->set($mappedName, $arguments[0]);
-            $method = $this->interface->getMethod($name);
-            if (!$method->hasReturnType()) return $this;
-            $returnType = $method->getReturnType();
-            $possibleReturnTypes = ['static', 'self', $method->getName()];
-            if (
-                $returnType instanceof ReflectionUnionType ||
-                !in_array($returnType->getName(), array_merge($possibleReturnTypes, ['void']))
-            ) {
-                $this->throwIllegalReturnTypeException($method);
-            } elseif ($returnType->getName() === 'void') return;
+            if ($returnType === 'void') return;
             else return $this;
         }
     }
 
-    public function get(string $path): mixed
+    /**
+     * @param \ReflectionMethod $method
+     * @throws \Exception
+     */
+    protected function checkMethodReturnType(ReflectionMethod $method): void
+    {
+        $returnType = $method->getReturnType();
+        (
+            $returnType instanceof ReflectionUnionType
+        ) && throw new Exception("Ilegal return type for method {$this->interface->getShortName()}::{$method->getName()}().");
+    }
+
+    protected function get(string $path): mixed
     {
         return array_get($this->data, $path);
     }
 
-    public function set(string $path, mixed $value): void
+    protected function set(string $path, mixed $value): void
     {
         array_set($this->data, $path, $value);
     }
@@ -189,15 +208,5 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
     public function toJson($options = 0)
     {
         return json_encode($this, $options);
-    }
-
-    /**
-     * @param \ReflectionMethod $method
-     * @throws \Exception
-     */
-    private function throwIllegalReturnTypeException(ReflectionMethod $method): void
-    {
-        throw new Exception("Ilegal return type for method 
-              {$this->interface->getShortName()}::{$method->getName()}(). Setters can only return self reference or void.");
     }
 }
