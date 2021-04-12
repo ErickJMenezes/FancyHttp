@@ -1,12 +1,12 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp;
+namespace FancyHttp;
 
 
 use BadMethodCallException;
-use ErickJMenezes\FancyHttp\Lib\Implementer;
-use ErickJMenezes\FancyHttp\Lib\Method;
+use FancyHttp\Lib\Implementer;
+use FancyHttp\Lib\Method;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
 use InvalidArgumentException;
@@ -19,7 +19,7 @@ use ReflectionException;
  * Class Client
  *
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package  ErickJMenezes\FancyHttp
+ * @package  FancyHttp
  * @template T of object
  */
 class Client

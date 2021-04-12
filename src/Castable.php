@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp;
+namespace FancyHttp;
 
 use Psr\Http\Message\ResponseInterface;
 
@@ -9,9 +9,9 @@ use Psr\Http\Message\ResponseInterface;
  * Interface Castable
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp
+ * @package FancyHttp
  */
 interface Castable
 {
-    public static function castResponse(ResponseInterface $response): static;
+    public static function castResponse(ResponseInterface $response): Castable;
 }

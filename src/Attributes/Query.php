@@ -1,11 +1,11 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Attributes;
+namespace FancyHttp\Attributes;
 
 use Attribute;
-use ErickJMenezes\FancyHttp\Contracts\ParameterAttribute;
-use ErickJMenezes\FancyHttp\Traits\Concerns\ExpectsArray;
+use FancyHttp\Contracts\ParameterAttribute;
+use FancyHttp\Traits\Concerns\ExpectsArray;
 
 /**
  * Class QueryParams
@@ -13,7 +13,7 @@ use ErickJMenezes\FancyHttp\Traits\Concerns\ExpectsArray;
  * An key-value array to be used as query strings.
  *
  * @author ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Attributes
+ * @package FancyHttp\Attributes
  */
 #[Attribute(Attribute::TARGET_PARAMETER)]
 class Query implements ParameterAttribute

@@ -1,13 +1,13 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Contracts;
+namespace FancyHttp\Contracts;
 
 /**
  * Class AbstractParameterAttribute
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Attributes
+ * @package FancyHttp\Attributes
  * @internal
  */
 interface ParameterAttribute

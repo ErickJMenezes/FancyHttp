@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Traits\Concerns;
+namespace FancyHttp\Traits\Concerns;
 
 
 use InvalidArgumentException;
@@ -10,7 +10,7 @@ use InvalidArgumentException;
  * Trait ExpectsArray
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Traits
+ * @package FancyHttp\Traits
  * @internal
  */
 trait ExpectsArray

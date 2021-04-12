@@ -18,19 +18,19 @@ class CastingTypesTest extends TestCase
 {
     use ClientSetup;
 
+    public function testArray()
+    {
+        $this->prepareHandler();
+        $response = $this->client->castToArray();
+        self::assertTrue($response['foo'] === 'bar');
+    }
+
     protected function prepareHandler(): void
     {
         $this->handler->append(new Response(
             headers: ['Content-Type' => 'application/json'],
             body: json_encode(['foo' => 'bar'])
         ));
-    }
-
-    public function testArray()
-    {
-        $this->prepareHandler();
-        $response = $this->client->castToArray();
-        self::assertTrue($response['foo'] === 'bar');
     }
 
     public function testObject()
@@ -119,6 +119,22 @@ class CastingTypesTest extends TestCase
         $this->checkFooInterface($fooInterface);
     }
 
+    /**
+     * @param \Tests\Clients\FooInterface $fooInterface
+     */
+    private function checkFooInterface(FooInterface $fooInterface): void
+    {
+        self::assertTrue($fooInterface->getFoo() === 'bar');
+        self::assertTrue($fooInterface->foo === 'bar');
+        self::assertTrue($fooInterface['foo'] === 'bar');
+        self::assertTrue((string)$fooInterface === '{"foo":"bar"}');
+        self::assertTrue($fooInterface->jsonSerialize() === ['foo' => 'bar']);
+        $fooInterface->setFoo('bar')->setFoo('baz');
+        self::assertTrue($fooInterface->getFoo() === 'baz');
+        foreach ($fooInterface as $key => $value)
+            self::assertTrue($key === 'foo' && $value === 'baz');
+    }
+
     public function testAutoMappedList()
     {
         $this->handler->append(new Response(
@@ -130,19 +146,5 @@ class CastingTypesTest extends TestCase
             self::assertTrue($fooInterface instanceof FooInterface, 'Something goes wrong');
             $this->checkFooInterface($fooInterface);
         }
-    }
-
-    /**
-     * @param \Tests\Clients\FooInterface $fooInterface
-     */
-    private function checkFooInterface(FooInterface $fooInterface): void
-    {
-        self::assertTrue($fooInterface->getFoo() === 'bar');
-        self::assertTrue($fooInterface->foo === 'bar');
-        self::assertTrue($fooInterface['foo'] === 'bar');
-        self::assertTrue((string)$fooInterface === '{"foo":"bar"}');
-        self::assertTrue($fooInterface->jsonSerialize() === ['foo' => 'bar']);
-        foreach ($fooInterface as $key => $value)
-            self::assertTrue($key === 'foo' && $value === 'bar');
     }
 }

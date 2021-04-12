@@ -1,10 +1,10 @@
 <?php
 
-namespace ErickJMenezes\FancyHttp\Attributes;
+namespace FancyHttp\Attributes;
 
 use Attribute;
-use ErickJMenezes\FancyHttp\Contracts\ParameterAttribute;
-use ErickJMenezes\FancyHttp\Traits\Concerns\ExpectsString;
+use FancyHttp\Contracts\ParameterAttribute;
+use FancyHttp\Traits\Concerns\ExpectsString;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
 class Body implements ParameterAttribute

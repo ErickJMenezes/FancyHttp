@@ -20,8 +20,11 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "ErickJMenezes\\FancyHttp\\": "src/"
-        }
+            "FancyHttp\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Attributes\Auth;
+namespace FancyHttp\Attributes\Auth;
 
 use Attribute;
 

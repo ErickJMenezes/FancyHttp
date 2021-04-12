@@ -1,16 +1,22 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Lib;
+namespace FancyHttp\Lib;
 
 
 use ArrayAccess;
 use BadMethodCallException;
+use FancyHttp\Attributes\MapTo;
+use FancyHttp\Traits\InteractsWithAttributes;
+use Exception;
 use Iterator;
 use JsonSerializable;
-use RuntimeException;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionUnionType;
 use Stringable;
-use Throwable;
+use function FancyHttp\array_get;
+use function FancyHttp\array_set;
 
 /**
  * Class AutoMappedProxy
@@ -21,6 +27,12 @@ use Throwable;
  */
 class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
 {
+    use InteractsWithAttributes;
+
+    /**
+     * @var array<class-string, array<string,string>>
+     */
+    protected static array $mapCache = [];
     /**
      * @var array<string, string>
      */
@@ -29,83 +41,71 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
     /**
      * AMProxy constructor.
      *
-     * @param array                $data
-     * @param array<string,string> $map
+     * @param array            $data
+     * @param \ReflectionClass $interface
      */
     public function __construct(
         protected array $data,
-        protected array $map
+        protected ReflectionClass $interface
     )
     {
-        foreach (array_keys($this->data) as $key)
-            $this->keyMap[$this->sanitizeKey($key)] = $key;
+        $interfaceName = $this->interface->getName();
+        if (isset(self::$mapCache[$interfaceName])) {
+            $this->keyMap = self::$mapCache[$interfaceName];
+        } else {
+            foreach ($this->interface->getMethods() as $method)
+                if ($method->class === $interfaceName)
+                    $this->loadMethodMap($method);
+            self::$mapCache[$interfaceName] = $this->keyMap;
+        }
     }
 
-    private function sanitizeKey(string $key): string
+    protected function loadMethodMap(ReflectionMethod $method): void
     {
-        return str_replace([' ', '-', '_'], '', strtolower($key));
+        if ($this->hasAttribute($method, MapTo::class)) {
+            $name = $this->getAttributeInstance($method, MapTo::class)->property;
+            $this->keyMap[$method->getName()] = $name;
+            return;
+        }
+        throw new BadMethodCallException("The method \"{$method}\" has no property map.");
     }
 
     /**
      * @param string $name
      * @param array  $arguments
      * @return mixed|void
+     * @throws \ReflectionException
+     * @throws \Exception
      */
     public function __call(string $name, array $arguments)
     {
-        if (str_starts_with($name, 'get')) {
-            if (isset($this->map[$name])) return $this->get($this->map[$name]);
-            return $this->getSetSanitized($name);
-        } elseif (str_starts_with($name, 'set')) {
-            $mappedKey = str_replace('set', 'get', $name);
-            if (isset($this->map[$mappedKey])) {
-                $this->set($this->map[$mappedKey], $arguments[0]);
-            } else {
-                $this->getSetSanitized($name, $arguments[0]);
-            }
+        $mappedName = $this->keyMap[$name];
+        if (count($arguments) === 0) {
+            return $this->get($mappedName);
         } else {
-            throw new BadMethodCallException("The method {$name} is not legal for AutoMapped interfaces.");
+            $this->set($mappedName, $arguments[0]);
+            $method = $this->interface->getMethod($name);
+            if (!$method->hasReturnType()) return $this;
+            $returnType = $method->getReturnType();
+            $possibleReturnTypes = ['static', 'self', $method->getName()];
+            if (
+                $returnType instanceof ReflectionUnionType ||
+                !in_array($returnType->getName(), array_merge($possibleReturnTypes, ['void']))
+            ) {
+                $this->throwIllegalReturnTypeException($method);
+            } elseif ($returnType->getName() === 'void') return;
+            else return $this;
         }
     }
 
     public function get(string $path): mixed
     {
-        $propNames = explode('.', $path);
-        $nested = $this->data;
-        foreach ($propNames as $propName) {
-            if (!isset($nested[$propName])) $this->triggerError($path, $propName);
-            $nested = $nested[$propName];
-        }
-        return $nested;
-    }
-
-    private function triggerError(string $path, mixed $propName): void
-    {
-        throw new RuntimeException("The property path {$path} is invalid. The nested property {$propName} doesn't exists in the data set.");
-    }
-
-    protected function getSetSanitized(string $key, mixed $value = null): mixed
-    {
-        $sanitizedName = substr($this->sanitizeKey($key), 3);
-        $mappedKey = $this->keyMap[$sanitizedName];
-        if (func_num_args() === 1) {
-            return $this->data[$mappedKey];
-        } else {
-            return $this->data[$mappedKey] = $value;
-        }
+        return array_get($this->data, $path);
     }
 
     public function set(string $path, mixed $value): void
     {
-        $propNames = explode('.', $path);
-        $paths = array_slice($propNames, 0, -1);
-        $nested = &$this->data;
-        foreach ($paths as $propName) {
-            if (is_array($nested[$propName])) $nested = &$nested[$propName];
-            else $this->triggerError($path, $propName);
-        }
-        $target = array_slice($propNames, -1)[0];
-        $nested[$target] = $value;
+        array_set($this->data, $path, $value);
     }
 
     public function __get(string $name)
@@ -189,5 +189,15 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
     public function toJson($options = 0)
     {
         return json_encode($this, $options);
+    }
+
+    /**
+     * @param \ReflectionMethod $method
+     * @throws \Exception
+     */
+    private function throwIllegalReturnTypeException(ReflectionMethod $method): void
+    {
+        throw new Exception("Ilegal return type for method 
+              {$this->interface->getShortName()}::{$method->getName()}(). Setters can only return self reference or void.");
     }
 }

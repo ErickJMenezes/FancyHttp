@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ErickJMenezes\FancyHttp\Attributes;
+namespace FancyHttp\Attributes;
 
 use Attribute;
 
@@ -20,7 +20,7 @@ use Attribute;
  * </pre>
  *
  * @author  ErickJMenezes <erickmenezes.dev@gmail.com>
- * @package ErickJMenezes\FancyHttp\Attributes
+ * @package FancyHttp\Attributes
  */
 #[Attribute(Attribute::TARGET_METHOD)]
 class Unwrap
