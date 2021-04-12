@@ -2,12 +2,14 @@
 
 namespace Tests\Clients;
 
+use ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod;
 use ErickJMenezes\FancyHttp\Attributes\Auth\Basic;
 use ErickJMenezes\FancyHttp\Attributes\Auth\Bearer;
 use ErickJMenezes\FancyHttp\Attributes\Auth\Digest;
 use ErickJMenezes\FancyHttp\Attributes\Auth\Ntml;
 use ErickJMenezes\FancyHttp\Attributes\Body;
 use ErickJMenezes\FancyHttp\Attributes\Delete;
+use ErickJMenezes\FancyHttp\Attributes\FormParams;
 use ErickJMenezes\FancyHttp\Attributes\Get;
 use ErickJMenezes\FancyHttp\Attributes\Head;
 use ErickJMenezes\FancyHttp\Attributes\HeaderParam;
@@ -94,6 +96,9 @@ interface TestCaseClient
 
     #[Get('/')]
     public function multipart(#[Multipart] array $multipart): int;
+
+    #[Get('/')]
+    public function formParams(#[FormParams] array $formParams): int;
 
     // casting response test
 

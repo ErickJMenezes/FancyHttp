@@ -43,7 +43,7 @@ class FooController
     
     public function __construct() 
     {
-        $this->fooClient = Client::createFor(
+        $this->fooClient = Client::createForInterface(
             FooClient::class,
             'https://api.fooapp.com/'
         );
@@ -57,19 +57,21 @@ a concrete implementation for the interface provided in the first argument, this
 means you can safely assign to a typed property or pass to any typed parameter of
 any function.
 
-### The FancyHttp Client
+### The client
 
 ```php
 use ErickJMenezes\FancyHttp\Client;
 ```
-This class provides only one method: `Client::createFor()`  
+This class provides only one method: `Client::createForInterface()`  
 the method accepts three arguments, the first is the **fully qualified interface name**, 
 the second is the **base uri** according to 
 [RFC 3986](https://tools.ietf.org/html/rfc3986#section-5.2) (optional),
 and the third is an array with guzzle options (optional).
 
 ```php
-$client = Client::createFor(
+use ErickJMenezes\FancyHttp\Client;
+
+$client = Client::createForInterface(
     YourInterface::class,
     'https://your.base-uri.com/api/'
 );
@@ -93,14 +95,35 @@ class FooController
 {
     protected FooClient $fooClient;
     
-    public function __construct() {...}
+    public function __construct() {
+        $this->fooClient = Client::createForInterface(
+            FooClient::class,
+            'https://api.fooapp.com/'
+        );
+    }
     
     public function find($id)
     {
-        // Just call the interface method.
+        // Just call the declared method..
         return $this->fooClient->getById($id);
     }
 }
 ```
 
-_Work in progress._
+### Return types
+
+FancyHttp allows the client interface methods to have different return types:  
+
+- array
+- string
+- int
+- void
+- object
+- \ArrayObject
+- \Psr\Http\Message\ResponseInterface
+- mixed
+- no type
+- \ErickJMenezes\FancyHttp\Castable (special type)
+- AutoMapped Interface (special type)
+
+*Work in progress*

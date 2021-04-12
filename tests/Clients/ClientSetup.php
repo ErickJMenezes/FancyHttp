@@ -23,7 +23,7 @@ trait ClientSetup
     protected function setUp(): void
     {
         $this->handler = new MockHandler();
-        $this->client = Client::createFor(
+        $this->client = Client::createForInterface(
             TestCaseClient::class,
             guzzleOptions: [
                 'handler' => $this->handler

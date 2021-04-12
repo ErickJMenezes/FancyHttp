@@ -30,19 +30,14 @@ trait InteractsWithMethods
     use InteractsWithAttributes;
 
     protected AbstractHttpMethod $verb;
+
     protected string $returnType;
+
     protected Parameters $parameters;
 
-    public function __construct(
-        protected ReflectionMethod $method,
-        array $arguments,
-        protected Client $parent,
-    )
-    {
-        $this->parameters = new Parameters($method->getParameters(), $arguments);
-        $this->loadVerb();
-        $this->returnType = $this->method->getReturnType()?->getName() ?? 'mixed';
-    }
+    protected ReflectionMethod $method;
+
+    protected Client $parent;
 
     protected function loadVerb(): void
     {
@@ -134,16 +129,6 @@ trait InteractsWithMethods
         return new ReflectionClass($this->getAttributeInstance($this->method, ReturnsMappedList::class)->interface);
     }
 
-    protected function mustUnwrap(): bool
-    {
-        return $this->hasAttribute($this->method, Unwrap::class);
-    }
-
-    protected function getWrapperProperty(): string
-    {
-        return $this->getAttributeInstance($this->method, Unwrap::class)->property;
-    }
-
     /**
      * @param \Psr\Http\Message\ResponseInterface $response
      * @return array
@@ -153,5 +138,15 @@ trait InteractsWithMethods
         $response = json_decode($response->getBody()->getContents(), true);
         if ($this->mustUnwrap()) return $response[$this->getWrapperProperty()];
         return $response;
+    }
+
+    protected function mustUnwrap(): bool
+    {
+        return $this->hasAttribute($this->method, Unwrap::class);
+    }
+
+    protected function getWrapperProperty(): string
+    {
+        return $this->getAttributeInstance($this->method, Unwrap::class)->property;
     }
 }

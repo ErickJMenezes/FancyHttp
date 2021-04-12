@@ -77,7 +77,7 @@ class Client
      * @template I of object
      * @throws \Exception
      */
-    public static function createFor(string $interface, string $baseUri = null, array $guzzleOptions = []): object
+    public static function createForInterface(string $interface, string $baseUri = null, array $guzzleOptions = []): object
     {
         return (new self($interface, $baseUri, $guzzleOptions))->generate();
     }
