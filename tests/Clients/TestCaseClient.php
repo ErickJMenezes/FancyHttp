@@ -2,7 +2,7 @@
 
 namespace Tests\Clients;
 
-use ErickJMenezes\FancyHttp\Attributes\AbstractHttpMethod;
+use ArrayObject;
 use ErickJMenezes\FancyHttp\Attributes\Auth\Basic;
 use ErickJMenezes\FancyHttp\Attributes\Auth\Bearer;
 use ErickJMenezes\FancyHttp\Attributes\Auth\Digest;
@@ -25,6 +25,7 @@ use ErickJMenezes\FancyHttp\Attributes\QueryParam;
 use ErickJMenezes\FancyHttp\Attributes\ReturnsMappedList;
 use ErickJMenezes\FancyHttp\Attributes\Suppress;
 use ErickJMenezes\FancyHttp\Attributes\Unwrap;
+use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
 
 
@@ -118,7 +119,7 @@ interface TestCaseClient
     public function castToInt(): int;
 
     #[Get('/')]
-    public function castToArrayObject(): \ArrayObject;
+    public function castToArrayObject(): ArrayObject;
 
     #[Get('/')]
     public function castToResponse(): ResponseInterface;
@@ -131,6 +132,9 @@ interface TestCaseClient
 
     #[Get('/')]
     public function castToDefault();
+
+    #[Get('/')]
+    public function castToPromise(): PromiseInterface;
 
     #[Get('/')]
     public function castToCastable(): CastableForTesting;
