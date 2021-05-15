@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 
 namespace FancyHttp\Lib;
@@ -10,10 +10,12 @@ use ReflectionClass;
 /**
  * Class Implementer
  *
+ * This class generates an implementation of any interface at runtime.
+ *
  * @author   ErickJMenezes <erickmenezes.dev@gmail.com>
  * @package  ErickJMenezesFancyHttp\Lib
- * @template T as object
- * @internal
+ * @template T of object
+ * @internal You shouldn't use this class due to unpredictable changes.
  */
 class Implementer
 {
@@ -47,8 +49,8 @@ class Implementer
                 public function __construct(protected $parent) {}
                 public function __get(string $name) {return $this->parent->$name;}
                 public function __set(string $name, $value) {$this->parent->$name = $value;}
-                protected function callParent($method, $arguments) {return $this->parseReturnedValue($this->parent->{$method}(...$arguments));}
-                protected function parseReturnedValue($value) {return $value === $this->parent ? $this : $value;}
+                private function callParent($method, $arguments) {return $this->parseReturnedValue($this->parent->{$method}(...$arguments));}
+                private function parseReturnedValue($value) {return $value === $this->parent ? $this : $value;}
                 %s
             };
         };',

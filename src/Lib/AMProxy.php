@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 
 namespace FancyHttp\Lib;
@@ -71,7 +71,7 @@ class AMProxy implements JsonSerializable, ArrayAccess, Iterator, Stringable
             $this->keyMap[$method->getName()] = $name;
             return;
         }
-        throw new BadMethodCallException("The method {$method->class}::{$method->getName()}() has no property map.");
+        throw new BadMethodCallException("The method $method->class::{$method->getName()}() has no property map.");
     }
 
     /**

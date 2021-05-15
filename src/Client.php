@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 
 namespace FancyHttp;
@@ -53,7 +53,7 @@ class Client
         array $guzzleOptions
     )
     {
-        $invalidArgumentException = new InvalidArgumentException("The value \"{$interfaceClass}\" is not a valid fully qualified interface name.");
+        $invalidArgumentException = new InvalidArgumentException("The value \"$interfaceClass\" is not a valid fully qualified interface name.");
         try {
             $this->interface = new ReflectionClass($interfaceClass);
             if (!$this->interface->isInterface()) throw $invalidArgumentException;
@@ -106,7 +106,7 @@ class Client
     public function __call(string $name, array $arguments): mixed
     {
         !$this->interface->hasMethod($name) &&
-        throw new BadMethodCallException("The method {$name} is not declared in {$this->interface->getName()}.");
+        throw new BadMethodCallException("The method $name is not declared in {$this->interface->getName()}.");
         return $this->callClientMethod($name, $arguments);
     }
 

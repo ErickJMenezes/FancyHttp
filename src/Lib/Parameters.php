@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 
 
 namespace FancyHttp\Lib;
@@ -75,11 +76,11 @@ class Parameters
     {
         $token = $this->valueFor(Bearer::class);
         if (is_null($token)) return [];
-        return ['Authorization' => "Bearer {$token}"];
+        return ['Authorization' => "Bearer $token"];
     }
 
     /**
-     * @return array
+     * @return array|null
      * @throws \Exception
      */
     public function getFormParams(): ?array
@@ -99,6 +100,7 @@ class Parameters
     /**
      * @return array<string>|null
      * @throws \Exception
+     * @psalm-suppress PropertyTypeCoercion
      */
     public function getAuthParams(): ?array
     {
@@ -147,12 +149,12 @@ class Parameters
             if ($count === 0) {
                 throw new Exception("The argument \"{$pathParameter->getName()}\" is not used by any path parameter.");
             } elseif ($count > 1) {
-                throw new Exception("The path parameter \"{$placeholder}\" is repeated.");
+                throw new Exception("The path parameter \"$placeholder\" is repeated.");
             }
         }
         $missing = [];
         if (preg_match('/{.*?}/', $path, $missing)) {
-            throw new Exception("The path parameter \"{$missing[0]}\" has no replacement");
+            throw new Exception("The path parameter \"$missing[0]\" has no replacement");
         }
         return $path;
     }

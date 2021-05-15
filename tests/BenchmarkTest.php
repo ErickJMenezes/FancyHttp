@@ -25,6 +25,6 @@ class BenchmarkTest extends TestCase
         }
         $timeEnd = microtime(true);
         $time = $timeEnd - $timeStart;
-        self::assertTrue($time <= 0.25);
+        self::assertTrue($time <= 0.5);
     }
 }

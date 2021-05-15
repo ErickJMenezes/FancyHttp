@@ -5,17 +5,19 @@ namespace FancyHttp;
 /**
  * Dot notation for get data inside array
  *
- * @param array  $_
- * @param string $path
- * @return mixed
+ * @param array<T> $_
+ * @param string   $path
+ * @return T
  * @internal
+ * @psalm-suppress DuplicateFunction
+ * @template       T
  */
-function array_get(array &$_, string $path): mixed
+function array_get(array $_, string $path): mixed
 {
     $propNames = explode('.', $path);
-    $nested = &$_;
+    $nested = $_;
     foreach ($propNames as $propName) {
-        $nested = &$nested[$propName];
+        $nested = $nested[$propName];
     }
     return $nested;
 }
@@ -23,10 +25,13 @@ function array_get(array &$_, string $path): mixed
 /**
  * Dot notation for set data inside array.
  *
- * @param array  $_
- * @param string $path
- * @param mixed  $value
+ * @param array<T> $_
+ * @param string   $path
+ * @param T        $value
+ * @return void
  * @internal
+ * @psalm-suppress DuplicateFunction
+ * @template       T
  */
 function array_set(array &$_, string $path, mixed $value): void
 {

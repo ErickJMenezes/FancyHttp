@@ -32,7 +32,7 @@ trait InteractsWithAutoMappedTypes
 
     /**
      * @param class-string<TClassString> $interface
-     * @return bool
+     * @return false|\ReflectionClass
      * @template TClassString
      */
     protected function isAutoMapped(string $interface): false|ReflectionClass
